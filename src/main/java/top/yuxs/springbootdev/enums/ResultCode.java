@@ -5,8 +5,9 @@ import lombok.Getter;
 
 @Getter
 public enum ResultCode {
-    /* 成功状态码 */
+    /* 成功 ，失败状态码 */
     SUCCESS(200, "操作成功"),
+    ERROR(2001,"操作失败"),
 
     /* 参数错误：4001 - 4999 */
     PARAM_IS_INVALID(4001, "参数无效"),
