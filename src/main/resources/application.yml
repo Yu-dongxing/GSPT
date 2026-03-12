@@ -1,0 +1,120 @@
+server:
+  port: 8080
+  # Tomcat 虚拟线程配置（如果在 WebFlux 下该配置不生效，如果在传统 Web 下生效）
+  tomcat:
+    # 最大连接数：Tomcat 允许接收和处理的最大并发连接数 (默认 8192，高并发场景可适当调大)
+    max-connections: 10000
+    # 接受队列长度：当所有处理线程都在忙时，允许在队列中排队的请求数 (默认 100，高并发极易溢出导致 Connection Refused)
+    accept-count: 1000
+    # 连接超时时间：降低此值可以快速释放被恶意或慢速客户端占用的连接 (默认 20000ms，改为 5000ms)
+    connection-timeout: 5000ms
+    # 保持连接 (Keep-Alive) 的最大请求数，复用 TCP 连接提升性能
+    max-keep-alive-requests: 500
+    threads:
+      # 注意：开启虚拟线程后，此处的 max-threads 实际上对请求处理线程池不再起核心限制作用，
+      # 因为 Spring Boot 会使用无界的虚拟线程执行器来处理请求。
+      max: 200
+
+spring:
+  application:
+    name: springbootDev
+
+  # =========================================================
+  # Java 21 虚拟线程
+  # 开启后，Web请求、定时任务等将默认使用轻量级的虚拟线程，极大提升并发性能
+  # =========================================================
+  threads:
+    virtual:
+      enabled: true
+
+  # =========================================================
+  # 数据库连接配置 (MySQL)
+  # =========================================================
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # JDBC 参数说明
+    # 1. serverTimezone=Asia/Shanghai：确保时区正确
+    # 2. rewriteBatchedStatements=true：开启批量插入/更新优化 (MyBatis-Plus saveBatch 必备)
+    # 3. cachePrepStmts=true & prepStmtCacheSize=250 & prepStmtCacheSqlLimit=2048：开启预编译语句缓存，极大提升高频重复 SQL 的性能
+    # 4. useServerPrepStmts=true：开启服务端预编译
+    url: jdbc:mysql://127.0.0.1:3306/dev?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&rewriteBatchedStatements=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true
+    username: root
+    password: 123456789
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      # 最小空闲连接数 (高并发下建议与 maximum-pool-size 保持一致，避免频繁创建和销毁连接带来的性能损耗)
+      minimum-idle: 50
+      # 最大连接池大小 (默认只有 10。有了虚拟线程后并发极高，如果不调大，大量虚拟线程会阻塞在等待数据库连接上)
+      maximum-pool-size: 50
+      # 从连接池获取连接的最大等待时间，超时未获取到则抛出异常 (默认 30000ms，高并发下可以适当缩短，快速失败，避免雪崩)
+      connection-timeout: 10000
+      # 连接在池中的最大空闲时间
+      idle-timeout: 600000
+      # 连接的最大生命周期 (必须比数据库服务器设置的 wait_timeout 短几秒)
+      max-lifetime: 1800000
+
+  # =========================================================
+  # Redis 配置
+  # =========================================================
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+      password:
+      # 连接 Redis 的超时时间
+      timeout: 3000ms
+      lettuce:
+        pool:
+          # 高并发下提高最大活跃连接数
+          max-active: 100
+          # 连接池耗尽时，获取连接的最大等待时间 (避免线程无限期阻塞)
+          max-wait: 2000ms
+          # 最大空闲连接数
+          max-idle: 50
+          # 最小空闲连接数
+          min-idle: 10
+
+# =========================================================
+# MyBatis-Plus 配置
+# =========================================================
+mybatis-plus:
+  # XML 映射文件位置
+  mapper-locations: classpath*:/mapper/**/*.xml
+  # 实体类所在包（配置后 XML 中可以直接写类名，不用写全路径）
+  type-aliases-package: top.yuxs.springbootDev.entity
+  configuration:
+    # 开启驼峰命名自动映射 (如数据库 user_name 会自动映射到 Java 的 userName)
+    map-underscore-to-camel-case: true
+    # 打印 SQL 语句到控制台 (生产环境建议关闭)
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # 全局逻辑删除字段值 (1: 已删除, 0: 未删除)
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      # 全局主键生成策略 (ASSIGN_ID 为雪花算法生成唯一 ID)
+      id-type: ASSIGN_ID
+
+# =========================================================
+# Sa-Token 权限认证配置
+# =========================================================
+sa-token:
+  # Token 的名称 (也是存储到前端 Cookie / Header 中的 key 名称)
+  token-name: Authorization
+  # Token 的有效期，单位秒 (例如：2592000 代表 30 天，-1 代表永久有效)
+  timeout: 2592000
+  # Token 临时有效期 (指定时间内无操作就过期，单位秒，-1 代表不限制)
+  active-timeout: -1
+  # 是否允许同一账号多地登录 (为 true 时允许一起登录, 为 false 时新登录会把旧登录挤下线)
+  is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个 Token (为 true 时所有登录共用一个 Token, 为 false 时每次登录新建一个 Token)
+  is-share: true
+  # Token 风格 (例如 UUID, Simple-UUID, Random-String 等)
+  token-style: uuid
+  # 是否输出操作日志
+  is-log: false
+
+# =========================================================
+# 自定义业务配置
+# =========================================================

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    monitorInterval="30": 30秒热加载配置文件
+-->
+<Configuration status="warn" monitorInterval="30">
+
+    <Properties>
+        <Property name="LOG_PATH">logs</Property>
+        <!--
+             注意：在异步日志中，尽量减少 %L (行号), %C (类名), %M (方法名) 的使用。
+             因为获取堆栈信息是非常耗时的操作，会显著抵消异步带来的性能提升。
+        -->
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- 控制台输出 -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout disableAnsi="false"
+                           pattern="%style{%d{yyyy-MM-dd HH:mm:ss.SSS}}{blue} %highlight{[%-5level]}{FATAL=red blink, ERROR=red, WARN=yellow bold, INFO=green, DEBUG=cyan, TRACE=white} [%t] %logger{36} - %msg%n"/>
+        </Console>
+
+        <!-- 滚动文件输出 -->
+        <RollingFile name="RollingFile"
+                     fileName="${LOG_PATH}/app.log"
+                     filePattern="${LOG_PATH}/$${date:yyyy-MM}/app-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}" />
+            <Policies>
+                <OnStartupTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="200 MB" />
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+            </Policies>
+            <DefaultRolloverStrategy max="5000">
+                <Delete basePath="${LOG_PATH}" maxDepth="2">
+                    <IfFileName glob="*/app-*.log.gz" />
+                    <IfLastModified age="30d" />
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!--
+            使用 AsyncRoot 替换 Root
+            includeLocation="false":
+                - 这是关键性能开关！
+                - 如果设为 true，Log4j2 会获取类名、方法名和行号，这会导致性能下降 10-100 倍。
+                - 在生产环境高并发下，强烈建议设为 false。
+        -->
+        <AsyncRoot level="info" includeLocation="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="RollingFile"/>
+        </AsyncRoot>
+
+        <!--
+            如果你针对特定的包（如自己的业务代码）需要特殊处理，可以这样写：
+            <AsyncLogger name="com.yourcompany.service" level="debug" additivity="false">
+                <AppenderRef ref="RollingFile"/>
+            </AsyncLogger>
+        -->
+    </Loggers>
+</Configuration>
