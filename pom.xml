@@ -12,11 +12,11 @@
     </parent>
 
     <!-- 新项目的基础信息 -->
-    <groupId>top.yuxs</groupId>
-    <artifactId>springbootDev</artifactId>
+    <groupId>com.wzz</groupId>
+    <artifactId>GSPT</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>springbootDev</name>
-    <description>springbootDev</description>
+    <name>GSPT</name>
+    <description>GSPT</description>
     <url/>
 
     <licenses>
