@@ -1,6 +1,5 @@
 package com.wzz.gspt.enums;
 
-import com.baomidou.mybatisplus.annotation.IEnum;
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
@@ -8,11 +7,11 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum UserRole {
+public enum ArticleCategory {
 
-    USER(1, "普通用户"),
-    VIP(2, "企业用户"),
-    ADMIN(3, "总后台");
+    DEMAND(1, "需求"),
+    ENTERPRISE(2, "企业"),
+    COMPANY(3, "公司");
 
     /**
      * 标记数据库存储的值

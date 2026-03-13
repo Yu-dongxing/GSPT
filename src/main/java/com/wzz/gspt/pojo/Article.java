@@ -62,7 +62,7 @@ public class Article extends BaseEntity {
      */
     @TableField("author_name")
     @ColumnComment("作者name(关联sys_user表用户名)")
-    private Long authorName;
+    private String authorName;
 
     /**
      * 文章状态使用枚举类
@@ -73,4 +73,13 @@ public class Article extends BaseEntity {
     @ColumnComment("状态：0-草稿, 1-已发布")
     @DefaultValue("1")
     private ArticleStatus status;
+
+    /**
+     * 文章分类使用枚举类
+     * 数据库存储：1/2/3
+     * 前端交互：1/2/3
+     */
+    @TableField("category")
+    @ColumnComment("文章分类：1-需求, 2-企业, 3-公司")
+    private ArticleCategory category;
 }

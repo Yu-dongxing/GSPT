@@ -131,6 +131,7 @@ file:
   upload-path: ./uploads/
   # Web 访问前缀
   access-path: /uploads/**
+  # 单个文件允许上传的最大字节数
   max-size: 20971520
   allowed-extensions:
     - .jpg

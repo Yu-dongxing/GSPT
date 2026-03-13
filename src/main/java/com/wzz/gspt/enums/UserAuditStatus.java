@@ -1,6 +1,5 @@
 package com.wzz.gspt.enums;
 
-import com.baomidou.mybatisplus.annotation.IEnum;
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
@@ -8,19 +7,15 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum UserRole {
+public enum UserAuditStatus {
 
-    USER(1, "普通用户"),
-    VIP(2, "企业用户"),
-    ADMIN(3, "总后台");
+    NONE(0, "无需审核(普通用户/后台)"),
+    PENDING(1, "待审核"),
+    APPROVED(2, "审核通过"),
+    REJECTED(3, "审核拒绝");
 
-    /**
-     * 标记数据库存储的值
-     * 标记 JSON 返回和接收的值
-     */
     @EnumValue
     @JsonValue
     private final Integer value;
-
     private final String description;
 }
