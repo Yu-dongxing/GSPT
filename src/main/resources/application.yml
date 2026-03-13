@@ -18,6 +18,10 @@ server:
 spring:
   application:
     name: GSPT
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
 
   # =========================================================
   # Java 21 虚拟线程
@@ -127,3 +131,30 @@ file:
   upload-path: ./uploads/
   # Web 访问前缀
   access-path: /uploads/**
+  max-size: 20971520
+  allowed-extensions:
+    - .jpg
+    - .jpeg
+    - .png
+    - .gif
+    - .webp
+    - .pdf
+    - .txt
+    - .doc
+    - .docx
+    - .xls
+    - .xlsx
+    - .zip
+  allowed-content-types:
+    - image/jpeg
+    - image/png
+    - image/gif
+    - image/webp
+    - application/pdf
+    - text/plain
+    - application/msword
+    - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+    - application/vnd.ms-excel
+    - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+    - application/zip
+    - application/x-zip-compressed

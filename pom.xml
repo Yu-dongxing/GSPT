@@ -37,7 +37,7 @@
         <!-- 指定 Java 版本为 21 -->
         <java.version>21</java.version>
         <!-- MyBatis-Plus 版本 -->
-        <mybatis-plus.version>3.5.10.1</mybatis-plus.version>
+        <mybatis-plus.version>3.5.15</mybatis-plus.version>
         <!-- Sa-Token 版本 -->
         <sa-token.version>1.44.0</sa-token.version>
         <!-- Hutool 工具包版本 -->
@@ -126,7 +126,7 @@
         <!-- 注：此处移除了老的 mybatis-spring-boot-starter，因为 MP 已包含，避免冲突 -->
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
             <version>${mybatis-plus.version}</version>
         </dependency>
 
