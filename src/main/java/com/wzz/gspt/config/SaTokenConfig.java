@@ -21,12 +21,12 @@ public class SaTokenConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new SaInterceptor(handler -> SaRouter
                         .match("/**")
-//                        .notMatch("/api/user/init")
-//                        .notMatch("/api/user/login")
-//                        .notMatch("/api/user/register")
-//                        .notMatch("/api/file/**")
+                        .notMatch("/api/user/register/**")
+                        .notMatch("/api/user/login")
+                        .notMatch("/api/admin/user/login")
                         .notMatch("/api/common/**")
                         .notMatch("/swagger-ui/**")
+                        .notMatch("/uploads/**")
                         .notMatch(SaHttpMethod.OPTIONS)
                         .check(r -> StpUtil.checkLogin())
                 ))
