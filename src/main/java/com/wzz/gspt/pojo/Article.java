@@ -30,6 +30,14 @@ public class Article extends BaseEntity {
     private String content;
 
     /**
+     * 预览内容
+     */
+    @TableField("preview_content")
+    @ColumnComment("文章预览内容")
+    @ColumnType("TEXT")
+    private String previewContent;
+
+    /**
      * 封面图片文件ID(关联文件表)
      */
     @TableField("cover_file_id")
@@ -42,6 +50,13 @@ public class Article extends BaseEntity {
     @TableField("cover_image_url")
     @ColumnComment("封面图片完整访问地址")
     private String coverImageUrl;
+
+    /**
+     * 预览图地址(用于列表展示的缩略图等)
+     */
+    @TableField("preview_image_id")
+    @ColumnComment("文章预览图文件ID(关联sys_file表ID)")
+    private Long previewImageId;
 
     /**
      * 预览图地址(用于列表展示的缩略图等)

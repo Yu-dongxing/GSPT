@@ -33,4 +33,14 @@ public class PublicArticleQueryRequest {
      * 文章分类
      */
     private ArticleCategory category;
+
+    /**
+     * 创建开始时间
+     */
+    private String startCreateTime;
+
+    /**
+     * 创建结束时间
+     */
+    private String endCreateTime;
 }

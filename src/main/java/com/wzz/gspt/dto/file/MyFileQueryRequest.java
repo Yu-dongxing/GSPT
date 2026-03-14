@@ -1,14 +1,12 @@
-package com.wzz.gspt.dto.article;
+package com.wzz.gspt.dto.file;
 
-import com.wzz.gspt.enums.ArticleCategory;
-import com.wzz.gspt.enums.ArticleStatus;
 import lombok.Data;
 
 /**
- * 查询当前用户文章列表请求对象
+ * 企业用户文件分页查询请求对象
  */
 @Data
-public class MyArticleQueryRequest {
+public class MyFileQueryRequest {
 
     /**
      * 页码
@@ -21,19 +19,19 @@ public class MyArticleQueryRequest {
     private Long pageSize = 10L;
 
     /**
-     * 标题关键字
+     * 原始文件名
      */
-    private String title;
+    private String originalName;
 
     /**
-     * 文章状态
+     * 存储文件名
      */
-    private ArticleStatus status;
+    private String storageName;
 
     /**
-     * 文章分类
+     * 文件后缀
      */
-    private ArticleCategory category;
+    private String fileSuffix;
 
     /**
      * 创建开始时间

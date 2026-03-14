@@ -91,7 +91,7 @@ mybatis-plus:
     # 开启驼峰命名自动映射 (如数据库 user_name 会自动映射到 Java 的 userName)
     map-underscore-to-camel-case: true
     # 打印 SQL 语句到控制台 (生产环境建议关闭)
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       # 全局逻辑删除字段值 (1: 已删除, 0: 未删除)

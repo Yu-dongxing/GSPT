@@ -35,6 +35,11 @@ public class ArticleVO {
     private String content;
 
     /**
+     * 预览内容
+     */
+    private String previewContent;
+
+    /**
      * 封面文件 ID
      */
     private Long coverFileId;
@@ -43,6 +48,11 @@ public class ArticleVO {
      * 封面访问路径
      */
     private String coverImageUrl;
+
+    /**
+     * 预览图文件 ID
+     */
+    private Long previewImageId;
 
     /**
      * 预览图访问路径

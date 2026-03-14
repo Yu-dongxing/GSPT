@@ -1,26 +1,25 @@
-2026-03-14 12:19:00.058 [main] INFO  com.wzz.gspt.GSPTApplication - Starting GSPTApplication using Java 21.0.10 with PID 36972 (E:\CODEPROJECT\JAVA\GSPT\target\classes started by yuxs in E:\CODEPROJECT\JAVA\GSPT)
-2026-03-14 12:19:00.066 [main] INFO  com.wzz.gspt.GSPTApplication - No active profile set, falling back to 1 default profile: "default"
-2026-03-14 12:19:00.195 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 9.0.1.Final
-2026-03-14 12:19:00.745 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
-2026-03-14 12:19:00.747 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
-2026-03-14 12:19:00.778 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 19 ms. Found 0 Redis repository interfaces.
-2026-03-14 12:19:01.322 [main] INFO  org.springframework.boot.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
-2026-03-14 12:19:01.333 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
-2026-03-14 12:19:01.334 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
-2026-03-14 12:19:01.334 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.18]
-2026-03-14 12:19:01.384 [main] INFO  org.springframework.boot.web.context.servlet.WebApplicationContextInitializer - Root WebApplicationContext: initialization completed in 1283 ms
-2026-03-14 12:19:01.825 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
-2026-03-14 12:19:01.948 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4189e668
-2026-03-14 12:19:01.949 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
-2026-03-14 12:19:02.656 [main] INFO  com.baomidou.mybatisplus.extension.spring.MybatisPlusApplicationContextAware - Register ApplicationContext instances org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16fe9c29
-2026-03-14 12:19:02.902 [main] INFO  org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
-2026-03-14 12:19:02.963 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
-2026-03-14 12:19:02.967 [main] INFO  org.springframework.boot.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
-2026-03-14 12:19:02.974 [main] INFO  com.wzz.gspt.GSPTApplication - Started GSPTApplication in 3.387 seconds (process running for 4.627)
-2026-03-14 12:19:03.079 [RMI TCP Connection(4)-198.18.0.1] INFO  org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-03-14 12:19:03.080 [RMI TCP Connection(4)-198.18.0.1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2026-03-14 12:19:03.082 [RMI TCP Connection(4)-198.18.0.1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
-2026-03-14 12:23:02.390 [tomcat-handler-5] WARN  com.wzz.gspt.exception.GlobalExceptionHandler - 业务异常: 文章分类不能为空
-2026-03-14 12:23:50.144 [tomcat-handler-9] WARN  com.wzz.gspt.exception.GlobalExceptionHandler - 业务异常: 普通用户只能发布需求标签文章
-2026-03-14 12:23:54.860 [tomcat-handler-10] WARN  com.wzz.gspt.exception.GlobalExceptionHandler - 业务异常: 封面文件不存在
-2026-03-14 12:24:02.453 [tomcat-handler-12] WARN  com.wzz.gspt.exception.GlobalExceptionHandler - 业务异常: 封面文件路径不匹配
+2026-03-14 17:42:06.485 [main] INFO  com.wzz.gspt.GSPTApplication - Starting GSPTApplication using Java 21.0.10 with PID 11840 (E:\CODEPROJECT\JAVA\GSPT\target\classes started by yuxs in E:\CODEPROJECT\JAVA\GSPT)
+2026-03-14 17:42:06.493 [main] INFO  com.wzz.gspt.GSPTApplication - No active profile set, falling back to 1 default profile: "default"
+2026-03-14 17:42:06.630 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 9.0.1.Final
+2026-03-14 17:42:07.202 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-03-14 17:42:07.204 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-03-14 17:42:07.237 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 20 ms. Found 0 Redis repository interfaces.
+2026-03-14 17:42:07.774 [main] INFO  org.springframework.boot.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-03-14 17:42:07.785 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-03-14 17:42:07.786 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-03-14 17:42:07.786 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.18]
+2026-03-14 17:42:07.837 [main] INFO  org.springframework.boot.web.context.servlet.WebApplicationContextInitializer - Root WebApplicationContext: initialization completed in 1310 ms
+2026-03-14 17:42:08.285 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-03-14 17:42:08.407 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@349aeec4
+2026-03-14 17:42:08.409 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-03-14 17:42:09.177 [main] INFO  com.baomidou.mybatisplus.extension.spring.MybatisPlusApplicationContextAware - Register ApplicationContext instances org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16fe9c29
+2026-03-14 17:42:09.428 [main] INFO  org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
+2026-03-14 17:42:09.497 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-03-14 17:42:09.502 [main] INFO  org.springframework.boot.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-03-14 17:42:09.511 [main] INFO  com.wzz.gspt.GSPTApplication - Started GSPTApplication in 3.482 seconds (process running for 4.278)
+2026-03-14 17:42:09.997 [RMI TCP Connection(2)-198.18.0.1] INFO  org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-14 17:42:09.997 [RMI TCP Connection(2)-198.18.0.1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-03-14 17:42:09.999 [RMI TCP Connection(2)-198.18.0.1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-03-14 17:49:49.121 [tomcat-handler-74] WARN  com.wzz.gspt.exception.GlobalExceptionHandler - 业务异常: 当前账号不是管理员
+2026-03-14 17:49:56.317 [tomcat-handler-76] WARN  com.wzz.gspt.exception.GlobalExceptionHandler - 业务异常: 账号或密码错误
+2026-03-14 17:59:19.765 [tomcat-handler-151] WARN  com.wzz.gspt.exception.GlobalExceptionHandler - 业务异常: 用户名已存在

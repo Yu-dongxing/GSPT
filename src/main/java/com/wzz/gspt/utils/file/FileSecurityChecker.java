@@ -71,20 +71,20 @@ public class FileSecurityChecker {
      */
     public void check(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "Uploaded file must not be empty");
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "上传文件不能为空");
         }
         if (file.getSize() > fileProperties.getMaxSize()) {
-            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "Uploaded file exceeds the size limit");
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "上传文件大小超过限制");
         }
 
         String originalFilename = file.getOriginalFilename();
         if (!StringUtils.hasText(originalFilename)) {
-            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "Filename must not be empty");
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "文件名不能为空");
         }
 
         String cleanedFilename = StringUtils.cleanPath(originalFilename);
         if (cleanedFilename.contains("..")) {
-            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "Filename is invalid");
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "文件名不合法");
         }
 
         String extension = FileUploadHelper.getExtension(cleanedFilename);
@@ -92,18 +92,18 @@ public class FileSecurityChecker {
                 .map(FileUploadHelper::normalizeExtension)
                 .collect(Collectors.toSet());
         if (!allowedExtensions.contains(extension)) {
-            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "Unsupported file extension: " + extension);
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "不支持的文件扩展名: " + extension);
         }
 
         String contentType = file.getContentType();
         if (!StringUtils.hasText(contentType)) {
-            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "Unable to detect content type");
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "无法识别文件内容类型");
         }
         Set<String> allowedContentTypes = fileProperties.getAllowedContentTypes().stream()
                 .map(type -> type.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toSet());
         if (!allowedContentTypes.contains(contentType.toLowerCase(Locale.ROOT))) {
-            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "Unsupported content type: " + contentType);
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "不支持的文件内容类型: " + contentType);
         }
 
         verifyMagicNumberIfNecessary(file, extension);
@@ -125,15 +125,15 @@ public class FileSecurityChecker {
         try (InputStream inputStream = file.getInputStream()) {
             int read = inputStream.read(header);
             if (read <= 0) {
-                throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "Unable to read uploaded file");
+                throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "无法读取上传文件内容");
             }
         } catch (IOException e) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "File security check failed");
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "文件安全检查失败");
         }
 
         boolean matched = magicNumbers.stream().anyMatch(magic -> startsWith(header, magic));
         if (!matched) {
-            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "File content does not match the extension");
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "文件内容与扩展名不匹配");
         }
     }
 

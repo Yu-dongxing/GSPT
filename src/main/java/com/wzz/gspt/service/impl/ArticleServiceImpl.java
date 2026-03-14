@@ -22,12 +22,16 @@ import com.wzz.gspt.pojo.Article;
 import com.wzz.gspt.pojo.FileRecord;
 import com.wzz.gspt.pojo.User;
 import com.wzz.gspt.service.ArticleService;
+import com.wzz.gspt.service.FileRecordService;
+import com.wzz.gspt.utils.DateTimeRangeUtil;
 import com.wzz.gspt.vo.ArticleVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -46,6 +50,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
      * 用户数据访问层
      */
     private final UserMapper userMapper;
+
+    /**
+     * 文件记录服务
+     */
+    private final FileRecordService fileRecordService;
 
     /**
      * 发表文章
@@ -108,12 +117,16 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         validateCommonPageRequest(request == null ? null : request.getPageNum(), request == null ? null : request.getPageSize(), "查询参数不能为空");
 
         Long currentUserId = getCurrentUserId();
+        var startCreateTime = DateTimeRangeUtil.parseDateTime(request.getStartCreateTime(), false);
+        var endCreateTime = DateTimeRangeUtil.parseDateTime(request.getEndCreateTime(), true);
         Page<Article> page = new Page<>(request.getPageNum(), request.getPageSize());
         LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<Article>()
                 .eq(Article::getAuthorId, currentUserId)
                 .like(StringUtils.hasText(request.getTitle()), Article::getTitle, request.getTitle())
                 .eq(request.getStatus() != null, Article::getStatus, request.getStatus())
                 .eq(request.getCategory() != null, Article::getCategory, request.getCategory())
+                .ge(startCreateTime != null, Article::getCreateTime, startCreateTime)
+                .le(endCreateTime != null, Article::getCreateTime, endCreateTime)
                 .orderByDesc(Article::getCreateTime);
 
         Page<Article> articlePage = page(page, wrapper);
@@ -151,6 +164,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (!removed) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "删除文章失败");
         }
+        deleteArticleFiles(article);
     }
 
     /**
@@ -179,12 +193,16 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     public IPage<ArticleVO> pagePublicArticles(PublicArticleQueryRequest request) {
         validateCommonPageRequest(request == null ? null : request.getPageNum(), request == null ? null : request.getPageSize(), "公共查询参数不能为空");
 
+        var startCreateTime = DateTimeRangeUtil.parseDateTime(request.getStartCreateTime(), false);
+        var endCreateTime = DateTimeRangeUtil.parseDateTime(request.getEndCreateTime(), true);
         Page<Article> page = new Page<>(request.getPageNum(), request.getPageSize());
         LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<Article>()
                 .eq(Article::getStatus, ArticleStatus.PUBLISHED)
                 .like(StringUtils.hasText(request.getTitle()), Article::getTitle, request.getTitle())
                 .like(StringUtils.hasText(request.getAuthorName()), Article::getAuthorName, request.getAuthorName())
                 .eq(request.getCategory() != null, Article::getCategory, request.getCategory())
+                .ge(startCreateTime != null, Article::getCreateTime, startCreateTime)
+                .le(endCreateTime != null, Article::getCreateTime, endCreateTime)
                 .orderByDesc(Article::getCreateTime);
 
         Page<Article> articlePage = page(page, wrapper);
@@ -202,12 +220,16 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         ensureCurrentUserIsAdmin();
         validateCommonPageRequest(request == null ? null : request.getPageNum(), request == null ? null : request.getPageSize(), "管理员查询参数不能为空");
 
+        var startCreateTime = DateTimeRangeUtil.parseDateTime(request.getStartCreateTime(), false);
+        var endCreateTime = DateTimeRangeUtil.parseDateTime(request.getEndCreateTime(), true);
         Page<Article> page = new Page<>(request.getPageNum(), request.getPageSize());
         LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<Article>()
                 .like(StringUtils.hasText(request.getTitle()), Article::getTitle, request.getTitle())
                 .like(StringUtils.hasText(request.getAuthorName()), Article::getAuthorName, request.getAuthorName())
                 .eq(request.getStatus() != null, Article::getStatus, request.getStatus())
                 .eq(request.getCategory() != null, Article::getCategory, request.getCategory())
+                .ge(startCreateTime != null, Article::getCreateTime, startCreateTime)
+                .le(endCreateTime != null, Article::getCreateTime, endCreateTime)
                 .orderByDesc(Article::getCreateTime);
 
         Page<Article> articlePage = page(page, wrapper);
@@ -299,10 +321,15 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (articleId == null) {
             throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "文章ID不能为空");
         }
+        Article article = getById(articleId);
+        if (article == null) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "文章不存在");
+        }
         boolean removed = removeById(articleId);
         if (!removed) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "管理员删除文章失败");
         }
+        deleteArticleFiles(article);
     }
 
     /**
@@ -352,26 +379,38 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 校验文章封面信息
+     * 校验文章封面与预览图信息
      *
      * @param request 请求对象
      */
     private void validateArticleCover(ArticlePublishRequest request) {
-        if (request.getCoverFileId() == null && !StringUtils.hasText(request.getCoverImageUrl())) {
+        validateArticleImage(request.getCoverFileId(), request.getCoverImageUrl(), "封面");
+        validateArticleImage(request.getPreviewImageId(), request.getPreviewImageUrl(), "预览图");
+    }
+
+    /**
+     * 校验文章图片文件信息
+     *
+     * @param fileId 文件 ID
+     * @param imageUrl 图片访问路径
+     * @param imageName 图片名称
+     */
+    private void validateArticleImage(Long fileId, String imageUrl, String imageName) {
+        if (fileId == null && !StringUtils.hasText(imageUrl)) {
             return;
         }
-        if (request.getCoverFileId() == null || !StringUtils.hasText(request.getCoverImageUrl())) {
-            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "封面文件ID和封面访问路径必须同时提供");
+        if (fileId == null || !StringUtils.hasText(imageUrl)) {
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), imageName + "文件ID和访问路径必须同时提供");
         }
 
-        FileRecord fileRecord = fileRecordMapper.selectById(request.getCoverFileId());
+        FileRecord fileRecord = fileRecordMapper.selectById(fileId);
         if (fileRecord == null) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "封面文件不存在");
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), imageName + "文件不存在");
         }
 
-        String coverImageUrl = request.getCoverImageUrl().trim();
-        if (!coverImageUrl.equals(fileRecord.getUrlPath()) && !coverImageUrl.endsWith(fileRecord.getUrlPath())) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "封面文件路径不匹配");
+        String trimmedImageUrl = imageUrl.trim();
+        if (!trimmedImageUrl.equals(fileRecord.getUrlPath()) && !trimmedImageUrl.endsWith(fileRecord.getUrlPath())) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), imageName + "文件路径不匹配");
         }
     }
 
@@ -419,13 +458,31 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private void fillArticle(Article article, ArticlePublishRequest request, User user) {
         article.setTitle(request.getTitle().trim());
         article.setContent(request.getContent().trim());
+        article.setPreviewContent(StringUtils.hasText(request.getPreviewContent()) ? request.getPreviewContent().trim() : null);
         article.setCoverFileId(request.getCoverFileId());
         article.setCoverImageUrl(StringUtils.hasText(request.getCoverImageUrl()) ? request.getCoverImageUrl().trim() : null);
+        article.setPreviewImageId(request.getPreviewImageId());
         article.setPreviewImageUrl(StringUtils.hasText(request.getPreviewImageUrl()) ? request.getPreviewImageUrl().trim() : null);
         article.setStatus(request.getStatus());
         article.setCategory(request.getCategory());
         article.setAuthorId(user.getId());
         article.setAuthorName(user.getUsername());
+    }
+
+    /**
+     * 删除文章后同步清理已无引用的文件
+     *
+     * @param article 文章对象
+     */
+    private void deleteArticleFiles(Article article) {
+        List<Long> fileIds = new ArrayList<>();
+        if (article.getCoverFileId() != null) {
+            fileIds.add(article.getCoverFileId());
+        }
+        if (article.getPreviewImageId() != null) {
+            fileIds.add(article.getPreviewImageId());
+        }
+        fileRecordService.deleteFilesIfUnreferenced(fileIds);
     }
 
     /**
@@ -540,8 +597,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 .id(article.getId())
                 .title(article.getTitle())
                 .content(truncateContent ? abbreviateContent(article.getContent()) : article.getContent())
+                .previewContent(article.getPreviewContent())
                 .coverFileId(article.getCoverFileId())
                 .coverImageUrl(article.getCoverImageUrl())
+                .previewImageId(article.getPreviewImageId())
                 .previewImageUrl(article.getPreviewImageUrl())
                 .authorId(article.getAuthorId())
                 .authorName(article.getAuthorName())

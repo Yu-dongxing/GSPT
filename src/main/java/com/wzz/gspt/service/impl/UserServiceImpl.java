@@ -18,11 +18,15 @@ import com.wzz.gspt.enums.ResultCode;
 import com.wzz.gspt.enums.UserAuditStatus;
 import com.wzz.gspt.enums.UserRole;
 import com.wzz.gspt.exception.BusinessException;
+import com.wzz.gspt.mapper.ArticleMapper;
 import com.wzz.gspt.mapper.FileRecordMapper;
 import com.wzz.gspt.mapper.UserMapper;
+import com.wzz.gspt.pojo.Article;
 import com.wzz.gspt.pojo.FileRecord;
 import com.wzz.gspt.pojo.User;
+import com.wzz.gspt.service.FileRecordService;
 import com.wzz.gspt.service.UserService;
+import com.wzz.gspt.utils.DateTimeRangeUtil;
 import com.wzz.gspt.vo.UserLoginVO;
 import com.wzz.gspt.vo.UserRegisterVO;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +34,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -44,6 +51,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * 文件记录数据访问层
      */
     private final FileRecordMapper fileRecordMapper;
+
+    /**
+     * 文章数据访问层
+     */
+    private final ArticleMapper articleMapper;
+
+    /**
+     * 文件服务
+     */
+    private final FileRecordService fileRecordService;
 
     /**
      * 普通用户注册
@@ -67,8 +84,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setRole(UserRole.USER);
         user.setAuditStatus(UserAuditStatus.NONE);
 
-        boolean saved = save(user);
-        if (!saved) {
+        if (!save(user)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "普通用户注册失败");
         }
         return buildRegisterVO(user);
@@ -93,16 +109,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (targetUser == null) {
             User user = new User();
             fillEnterpriseUser(user, request, licenseFile);
-            boolean saved = save(user);
-            if (!saved) {
+            if (!save(user)) {
                 throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "企业用户注册失败");
             }
             return buildRegisterVO(user);
         }
 
         fillEnterpriseUser(targetUser, request, licenseFile);
-        boolean updated = updateById(targetUser);
-        if (!updated) {
+        if (!updateById(targetUser)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "企业用户重新提交失败");
         }
         return buildRegisterVO(targetUser);
@@ -191,14 +205,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         if (user.getRole() == UserRole.ENTERPRISE) {
             applyEnterpriseProfile(user, request);
-        } else {
-            if (StringUtils.hasText(request.getCompanyName())) {
-                user.setCompanyName(request.getCompanyName().trim());
-            }
+        } else if (StringUtils.hasText(request.getCompanyName())) {
+            user.setCompanyName(request.getCompanyName().trim());
         }
 
-        boolean updated = updateById(user);
-        if (!updated) {
+        if (!updateById(user)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "修改个人信息失败");
         }
         return buildRegisterVO(user);
@@ -232,8 +243,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         user.setPassword(request.getNewPassword().trim());
-        boolean updated = updateById(user);
-        if (!updated) {
+        if (!updateById(user)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "修改密码失败");
         }
     }
@@ -263,9 +273,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         user.setAuditStatus(request.getAuditStatus());
         user.setAuditRemark(StringUtils.hasText(request.getAuditRemark()) ? request.getAuditRemark().trim() : null);
-
-        boolean updated = updateById(user);
-        if (!updated) {
+        if (!updateById(user)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "企业审核失败");
         }
         return buildRegisterVO(user);
@@ -282,6 +290,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         ensureCurrentUserIsAdmin();
         validatePageRequest(request);
 
+        LocalDateTime startCreateTime = DateTimeRangeUtil.parseDateTime(request.getStartCreateTime(), false);
+        LocalDateTime endCreateTime = DateTimeRangeUtil.parseDateTime(request.getEndCreateTime(), true);
+
         Page<User> page = new Page<>(request.getPageNum(), request.getPageSize());
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
                 .like(StringUtils.hasText(request.getUsername()), User::getUsername, request.getUsername())
@@ -290,6 +301,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .like(StringUtils.hasText(request.getLicenseName()), User::getLicenseName, request.getLicenseName())
                 .eq(request.getRole() != null, User::getRole, request.getRole())
                 .eq(request.getAuditStatus() != null, User::getAuditStatus, request.getAuditStatus())
+                .ge(startCreateTime != null, User::getCreateTime, startCreateTime)
+                .le(endCreateTime != null, User::getCreateTime, endCreateTime)
                 .orderByDesc(User::getCreateTime);
 
         Page<User> userPage = page(page, wrapper);
@@ -346,8 +359,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         User user = new User();
         applyAdminSaveRequest(user, request, licenseFile);
 
-        boolean saved = save(user);
-        if (!saved) {
+        if (!save(user)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "新增用户失败");
         }
         return buildRegisterVO(user);
@@ -385,8 +397,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         FileRecord licenseFile = resolveAdminLicenseFile(request);
         applyAdminSaveRequest(user, request, licenseFile);
 
-        boolean updated = updateById(user);
-        if (!updated) {
+        if (!updateById(user)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "修改用户失败");
         }
         return buildRegisterVO(user);
@@ -410,10 +421,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "不允许删除当前登录管理员");
         }
 
-        boolean removed = removeById(userId);
-        if (!removed) {
+        User user = getById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "用户不存在");
+        }
+
+        deleteUserRelations(user);
+        if (!removeById(userId)) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "删除用户失败");
         }
+        deleteUserFiles(user);
     }
 
     /**
@@ -434,14 +451,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "不允许批量删除当前登录管理员");
         }
 
-        boolean removed = removeByIds(request.getUserIds());
-        if (!removed) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "批量删除用户失败");
+        for (Long userId : request.getUserIds()) {
+            deleteUser(userId);
         }
     }
 
     /**
      * 校验普通用户注册参数
+     *
+     * @param request 注册请求
      */
     private void validateNormalRequest(UserNormalRegisterRequest request) {
         if (request == null) {
@@ -457,6 +475,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 校验企业用户注册参数
+     *
+     * @param request 注册请求
      */
     private void validateEnterpriseRequest(UserEnterpriseRegisterRequest request) {
         if (request == null) {
@@ -484,6 +504,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 校验登录参数并返回登录用户
+     *
+     * @param request 登录请求
+     * @return 用户对象
      */
     private User validateLoginCredentials(UserLoginRequest request) {
         if (request == null) {
@@ -497,10 +520,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         User user = getByUsername(request.getUsername());
-        if (user == null) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "账号或密码错误");
-        }
-        if (!request.getPassword().trim().equals(user.getPassword())) {
+        if (user == null || !request.getPassword().trim().equals(user.getPassword())) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "账号或密码错误");
         }
         return user;
@@ -508,6 +528,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 执行登录动作
+     *
+     * @param user 用户对象
+     * @return 登录结果
      */
     private UserLoginVO doLogin(User user) {
         StpUtil.login(user.getId());
@@ -522,7 +545,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
-     * 校验审核参数
+     * 校验企业审核参数
+     *
+     * @param request 审核请求
      */
     private void validateAuditRequest(EnterpriseAuditRequest request) {
         if (request == null) {
@@ -546,6 +571,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 校验分页请求
+     *
+     * @param request 分页请求
      */
     private void validatePageRequest(UserAdminQueryRequest request) {
         if (request == null) {
@@ -561,6 +588,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 校验管理员新增或修改用户参数
+     *
+     * @param request 用户请求
+     * @param isUpdate 是否为修改操作
      */
     private void validateAdminSaveRequest(UserAdminSaveRequest request, boolean isUpdate) {
         if (request == null) {
@@ -597,6 +627,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 校验营业执照文件是否存在且与请求路径一致
+     *
+     * @param licenseFileId 营业执照文件 ID
+     * @param licenseUrl 营业执照访问路径
+     * @return 文件记录
      */
     private FileRecord validateLicenseFile(Long licenseFileId, String licenseUrl) {
         FileRecord fileRecord = fileRecordMapper.selectById(licenseFileId);
@@ -614,6 +648,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 根据用户名查询用户
+     *
+     * @param username 用户名
+     * @return 用户对象
      */
     private User getByUsername(String username) {
         if (!StringUtils.hasText(username)) {
@@ -624,6 +661,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 根据邮箱查询用户
+     *
+     * @param email 邮箱
+     * @return 用户对象
      */
     private User getByEmail(String email) {
         if (!StringUtils.hasText(email)) {
@@ -633,7 +673,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
-     * 解析企业注册应写入的新用户或可重提的目标用户
+     * 解析企业注册应写入的新用户或可重新提交的目标用户
+     *
+     * @param usernameUser 手机号命中的用户
+     * @param emailUser 邮箱命中的用户
+     * @return 目标用户
      */
     private User resolveEnterpriseTarget(User usernameUser, User emailUser) {
         if (usernameUser == null && emailUser == null) {
@@ -652,6 +696,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 填充企业用户信息
+     *
+     * @param user 用户对象
+     * @param request 注册请求
+     * @param licenseFile 营业执照文件
      */
     private void fillEnterpriseUser(User user, UserEnterpriseRegisterRequest request, FileRecord licenseFile) {
         user.setUsername(request.getPhone().trim());
@@ -694,6 +742,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 根据管理员保存请求解析营业执照文件
+     *
+     * @param request 保存请求
+     * @return 文件记录
      */
     private FileRecord resolveAdminLicenseFile(UserAdminSaveRequest request) {
         if (request.getRole() != UserRole.ENTERPRISE) {
@@ -704,6 +755,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 应用管理员新增或修改用户请求
+     *
+     * @param user 用户对象
+     * @param request 保存请求
+     * @param licenseFile 营业执照文件
      */
     private void applyAdminSaveRequest(User user, UserAdminSaveRequest request, FileRecord licenseFile) {
         user.setUsername(request.getUsername().trim());
@@ -733,23 +788,28 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 校验当前用户的登录状态与审核状态是否允许登录
+     *
+     * @param user 用户对象
      */
     private void validateLoginStatus(User user) {
-        if (user.getRole() == UserRole.ENTERPRISE) {
-            if (user.getAuditStatus() == UserAuditStatus.PENDING) {
-                throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "企业账号正在审核中，暂不可登录");
-            }
-            if (user.getAuditStatus() == UserAuditStatus.REJECTED) {
-                throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "企业账号审核未通过，请修改后重新提交");
-            }
-            if (user.getAuditStatus() != UserAuditStatus.APPROVED) {
-                throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "企业账号状态异常，暂不可登录");
-            }
+        if (user.getRole() != UserRole.ENTERPRISE) {
+            return;
+        }
+        if (user.getAuditStatus() == UserAuditStatus.PENDING) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "企业账号正在审核中，暂不可登录");
+        }
+        if (user.getAuditStatus() == UserAuditStatus.REJECTED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "企业账号审核未通过，请修改后重新提交");
+        }
+        if (user.getAuditStatus() != UserAuditStatus.APPROVED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "企业账号状态异常，暂不可登录");
         }
     }
 
     /**
      * 获取当前登录用户 ID
+     *
+     * @return 当前登录用户 ID
      */
     private Long getCurrentLoginUserId() {
         Object loginId = StpUtil.getLoginIdDefaultNull();
@@ -775,7 +835,77 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     /**
+     * 删除用户关联的文章和文章引用文件
+     *
+     * @param user 用户对象
+     */
+    private void deleteUserRelations(User user) {
+        List<Article> articles = articleMapper.selectList(
+                new LambdaQueryWrapper<Article>().eq(Article::getAuthorId, user.getId())
+        );
+        if (articles == null || articles.isEmpty()) {
+            return;
+        }
+
+        List<Long> articleIds = articles.stream().map(Article::getId).collect(Collectors.toList());
+        if (!articleIds.isEmpty()) {
+            articleMapper.deleteByIds(articleIds);
+        }
+
+        List<Long> fileIds = new ArrayList<>();
+        for (Article article : articles) {
+            fileIds.addAll(buildArticleFileIds(article));
+        }
+        fileRecordService.deleteFilesIfUnreferenced(fileIds);
+    }
+
+    /**
+     * 删除用户删除后已无引用的文件
+     *
+     * @param user 用户对象
+     */
+    private void deleteUserFiles(User user) {
+        List<Long> fileIds = new ArrayList<>();
+        if (user.getLicenseFileId() != null) {
+            fileIds.add(user.getLicenseFileId());
+        }
+
+        List<FileRecord> uploadedFiles = fileRecordMapper.selectList(
+                new LambdaQueryWrapper<FileRecord>().eq(FileRecord::getUploaderId, user.getId())
+        );
+        if (uploadedFiles != null) {
+            for (FileRecord fileRecord : uploadedFiles) {
+                if (fileRecord.getId() != null) {
+                    fileIds.add(fileRecord.getId());
+                }
+            }
+        }
+
+        fileRecordService.deleteFilesIfUnreferenced(fileIds);
+    }
+
+    /**
+     * 收集文章关联的文件 ID
+     *
+     * @param article 文章对象
+     * @return 文件 ID 列表
+     */
+    private List<Long> buildArticleFileIds(Article article) {
+        List<Long> fileIds = new ArrayList<>();
+        if (article.getCoverFileId() != null) {
+            fileIds.add(article.getCoverFileId());
+        }
+        if (article.getPreviewImageId() != null) {
+            fileIds.add(article.getPreviewImageId());
+        }
+        return fileIds;
+    }
+
+    /**
      * 构造注册返回对象
+     *
+     * @param user 用户对象
+     * @return 返回结果
      */
     private UserRegisterVO buildRegisterVO(User user) {
         return UserRegisterVO.builder()

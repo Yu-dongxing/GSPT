@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.wzz.gspt.common.Result;
 import com.wzz.gspt.dto.article.ArticlePublishRequest;
 import com.wzz.gspt.dto.article.MyArticleQueryRequest;
+import com.wzz.gspt.dto.article.PublicArticleQueryRequest;
 import com.wzz.gspt.service.ArticleService;
 import com.wzz.gspt.vo.ArticleVO;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 文章控制器
  *
- * <p>提供文章发布、修改、查询自己文章以及删除自己文章的接口。</p>
+ * <p>提供文章发布、公共查询、详情查询以及个人文章管理接口。</p>
  */
 @RestController
 @RequiredArgsConstructor
@@ -39,6 +40,28 @@ public class ArticleController {
     @PostMapping("/publish")
     public Result<ArticleVO> publishArticle(@RequestBody ArticlePublishRequest request) {
         return Result.success(articleService.publishArticle(request));
+    }
+
+    /**
+     * 访客分页查询公共文章列表接口
+     *
+     * @param request 查询请求
+     * @return 分页结果
+     */
+    @PostMapping("/public/page")
+    public Result<IPage<ArticleVO>> pagePublicArticles(@RequestBody PublicArticleQueryRequest request) {
+        return Result.success(articleService.pagePublicArticles(request));
+    }
+
+    /**
+     * 获取文章详情接口
+     *
+     * @param articleId 文章 ID
+     * @return 文章详情
+     */
+    @GetMapping("/{articleId}")
+    public Result<ArticleVO> getArticleDetail(@PathVariable Long articleId) {
+        return Result.success(articleService.getArticleDetail(articleId));
     }
 
     /**
