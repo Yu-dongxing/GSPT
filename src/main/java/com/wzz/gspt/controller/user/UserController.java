@@ -4,6 +4,8 @@ import com.wzz.gspt.common.Result;
 import com.wzz.gspt.dto.user.UserEnterpriseRegisterRequest;
 import com.wzz.gspt.dto.user.UserLoginRequest;
 import com.wzz.gspt.dto.user.UserNormalRegisterRequest;
+import com.wzz.gspt.dto.user.UserPasswordChangeRequest;
+import com.wzz.gspt.dto.user.UserProfileUpdateRequest;
 import com.wzz.gspt.service.UserService;
 import com.wzz.gspt.vo.UserLoginVO;
 import com.wzz.gspt.vo.UserRegisterVO;
@@ -81,5 +83,28 @@ public class UserController {
     @GetMapping("/current")
     public Result<UserRegisterVO> getCurrentUser() {
         return Result.success(userService.getCurrentUser());
+    }
+
+    /**
+     * 修改当前登录用户个人信息接口
+     *
+     * @param request 修改请求
+     * @return 修改后的用户信息
+     */
+    @PostMapping("/profile/update")
+    public Result<UserRegisterVO> updateProfile(@RequestBody UserProfileUpdateRequest request) {
+        return Result.success(userService.updateProfile(request));
+    }
+
+    /**
+     * 修改当前登录用户密码接口
+     *
+     * @param request 修改密码请求
+     * @return 修改结果
+     */
+    @PostMapping("/password/change")
+    public Result<?> changePassword(@RequestBody UserPasswordChangeRequest request) {
+        userService.changePassword(request);
+        return Result.success();
     }
 }

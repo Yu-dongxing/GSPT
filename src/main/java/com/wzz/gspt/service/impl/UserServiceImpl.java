@@ -12,6 +12,8 @@ import com.wzz.gspt.dto.user.UserBatchDeleteRequest;
 import com.wzz.gspt.dto.user.UserEnterpriseRegisterRequest;
 import com.wzz.gspt.dto.user.UserLoginRequest;
 import com.wzz.gspt.dto.user.UserNormalRegisterRequest;
+import com.wzz.gspt.dto.user.UserPasswordChangeRequest;
+import com.wzz.gspt.dto.user.UserProfileUpdateRequest;
 import com.wzz.gspt.enums.ResultCode;
 import com.wzz.gspt.enums.UserAuditStatus;
 import com.wzz.gspt.enums.UserRole;
@@ -155,6 +157,85 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "当前登录用户不存在");
         }
         return buildRegisterVO(user);
+    }
+
+    /**
+     * 修改当前登录用户个人信息
+     *
+     * @param request 修改请求
+     * @return 修改后的用户信息
+     */
+    @Override
+    @Transactional
+    public UserRegisterVO updateProfile(UserProfileUpdateRequest request) {
+        if (request == null) {
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "修改个人信息参数不能为空");
+        }
+
+        Long currentUserId = getCurrentLoginUserId();
+        User user = getById(currentUserId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "当前登录用户不存在");
+        }
+
+        if (StringUtils.hasText(request.getNickname())) {
+            user.setNickname(request.getNickname().trim());
+        }
+        if (StringUtils.hasText(request.getEmail())) {
+            User existedEmailUser = getByEmail(request.getEmail());
+            if (existedEmailUser != null && !Objects.equals(existedEmailUser.getId(), user.getId())) {
+                throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "邮箱已存在");
+            }
+            user.setEmail(request.getEmail().trim());
+        }
+
+        if (user.getRole() == UserRole.ENTERPRISE) {
+            applyEnterpriseProfile(user, request);
+        } else {
+            if (StringUtils.hasText(request.getCompanyName())) {
+                user.setCompanyName(request.getCompanyName().trim());
+            }
+        }
+
+        boolean updated = updateById(user);
+        if (!updated) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "修改个人信息失败");
+        }
+        return buildRegisterVO(user);
+    }
+
+    /**
+     * 修改当前登录用户密码
+     *
+     * @param request 修改密码请求
+     */
+    @Override
+    @Transactional
+    public void changePassword(UserPasswordChangeRequest request) {
+        if (request == null) {
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "修改密码参数不能为空");
+        }
+        if (!StringUtils.hasText(request.getOldPassword())) {
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "原密码不能为空");
+        }
+        if (!StringUtils.hasText(request.getNewPassword())) {
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "新密码不能为空");
+        }
+
+        Long currentUserId = getCurrentLoginUserId();
+        User user = getById(currentUserId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "当前登录用户不存在");
+        }
+        if (!request.getOldPassword().trim().equals(user.getPassword())) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "原密码错误");
+        }
+
+        user.setPassword(request.getNewPassword().trim());
+        boolean updated = updateById(user);
+        if (!updated) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "修改密码失败");
+        }
     }
 
     /**
@@ -583,6 +664,32 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setRole(UserRole.ENTERPRISE);
         user.setAuditStatus(UserAuditStatus.PENDING);
         user.setAuditRemark("企业注册已提交，等待审核");
+    }
+
+    /**
+     * 应用企业用户个人资料修改
+     *
+     * @param user 用户对象
+     * @param request 修改请求
+     */
+    private void applyEnterpriseProfile(User user, UserProfileUpdateRequest request) {
+        if (StringUtils.hasText(request.getLicenseName())) {
+            user.setLicenseName(request.getLicenseName().trim());
+        }
+        if (StringUtils.hasText(request.getCompanyName())) {
+            user.setCompanyName(request.getCompanyName().trim());
+        } else if (StringUtils.hasText(request.getLicenseName())) {
+            user.setCompanyName(request.getLicenseName().trim());
+        }
+
+        if (request.getLicenseFileId() != null || StringUtils.hasText(request.getLicenseUrl())) {
+            if (request.getLicenseFileId() == null || !StringUtils.hasText(request.getLicenseUrl())) {
+                throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "营业执照文件ID和访问路径必须同时提供");
+            }
+            FileRecord licenseFile = validateLicenseFile(request.getLicenseFileId(), request.getLicenseUrl());
+            user.setLicenseFileId(licenseFile.getId());
+            user.setLicenseUrl(request.getLicenseUrl().trim());
+        }
     }
 
     /**

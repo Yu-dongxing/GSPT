@@ -9,6 +9,8 @@ import com.wzz.gspt.dto.user.UserBatchDeleteRequest;
 import com.wzz.gspt.dto.user.UserEnterpriseRegisterRequest;
 import com.wzz.gspt.dto.user.UserLoginRequest;
 import com.wzz.gspt.dto.user.UserNormalRegisterRequest;
+import com.wzz.gspt.dto.user.UserPasswordChangeRequest;
+import com.wzz.gspt.dto.user.UserProfileUpdateRequest;
 import com.wzz.gspt.pojo.User;
 import com.wzz.gspt.vo.UserLoginVO;
 import com.wzz.gspt.vo.UserRegisterVO;
@@ -61,6 +63,21 @@ public interface UserService extends IService<User> {
      * @return 当前用户信息
      */
     UserRegisterVO getCurrentUser();
+
+    /**
+     * 修改当前登录用户个人信息
+     *
+     * @param request 修改请求
+     * @return 修改后的用户信息
+     */
+    UserRegisterVO updateProfile(UserProfileUpdateRequest request);
+
+    /**
+     * 修改当前登录用户密码
+     *
+     * @param request 修改密码请求
+     */
+    void changePassword(UserPasswordChangeRequest request);
 
     /**
      * 后台审核企业用户

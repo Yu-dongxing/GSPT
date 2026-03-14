@@ -5,21 +5,37 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * 文章分类枚举
+ */
 @Getter
 @AllArgsConstructor
 public enum ArticleCategory {
 
+    /**
+     * 需求标签文章
+     */
     DEMAND(1, "需求"),
-    ENTERPRISE(2, "企业"),
+
+    /**
+     * 产品标签文章
+     */
+    PRODUCT(2, "产品"),
+
+    /**
+     * 公司标签文章
+     */
     COMPANY(3, "公司");
 
     /**
-     * 标记数据库存储的值
-     * 标记 JSON 返回和接收的值
+     * 数据库存储值
      */
     @EnumValue
     @JsonValue
     private final Integer value;
 
+    /**
+     * 分类说明
+     */
     private final String description;
 }
