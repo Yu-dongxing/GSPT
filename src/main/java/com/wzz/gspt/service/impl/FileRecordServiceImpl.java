@@ -453,12 +453,12 @@ public class FileRecordServiceImpl extends ServiceImpl<FileRecordMapper, FileRec
     private void ensureFileNotReferenced(Long fileId) {
         Article articleReference = findArticleReference(fileId);
         if (articleReference != null) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "当前文件已被文章引用，不能直接删除");
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "当前文件已被文章引用,不能直接删除");
         }
 
         User userReference = findUserReference(fileId);
         if (userReference != null) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "当前文件已被用户资料引用，不能直接删除");
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "当前文件已被用户资料引用,不能直接删除");
         }
     }
 

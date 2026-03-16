@@ -34,7 +34,6 @@ public enum ResultCode {
 
     /* 业务错误：6001 - 6999 */
     BUSINESS_ERROR(6001, "业务执行异常"),
-    CONTRACT_ERROR(6002, "合约执行异常"),
     EXTERNAL_SERVICE_ERROR(6003, "外部服务调用异常");
 
     private final Integer code;
