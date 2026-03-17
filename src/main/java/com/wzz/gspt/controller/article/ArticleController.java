@@ -8,12 +8,14 @@ import com.wzz.gspt.dto.article.PublicArticleQueryRequest;
 import com.wzz.gspt.service.ArticleService;
 import com.wzz.gspt.vo.ArticleVO;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -51,6 +53,17 @@ public class ArticleController {
     @PostMapping("/public/page")
     public Result<IPage<ArticleVO>> pagePublicArticles(@RequestBody PublicArticleQueryRequest request) {
         return Result.success(articleService.pagePublicArticles(request));
+    }
+
+    /**
+     * 访客随机获取指定数量的公共文章预览列表接口
+     *
+     * @param count 数量
+     * @return 文章预览列表
+     */
+    @GetMapping("/public/random")
+    public Result<List<ArticleVO>> randomPublicArticles(@RequestParam("count") Integer count) {
+        return Result.success(articleService.randomPublicArticles(count));
     }
 
     /**

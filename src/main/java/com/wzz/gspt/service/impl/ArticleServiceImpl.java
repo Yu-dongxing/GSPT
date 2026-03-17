@@ -210,6 +210,30 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
+     * 随机获取指定数量的公共文章预览列表
+     *
+     * @param count 数量
+     * @return 文章预览列表
+     */
+    @Override
+    public List<ArticleVO> randomPublicArticles(Integer count) {
+        if (count == null || count < 1) {
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "数量必须大于等于1");
+        }
+        if (count > 100) {
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "数量不能超过100");
+        }
+
+        List<Article> articles = list(new LambdaQueryWrapper<Article>()
+                .eq(Article::getStatus, ArticleStatus.PUBLISHED)
+                .last("ORDER BY RAND() LIMIT " + count));
+
+        return articles.stream()
+                .map(article -> buildArticleVO(article, true))
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 管理员分页查询文章
      *
      * @param request 查询请求

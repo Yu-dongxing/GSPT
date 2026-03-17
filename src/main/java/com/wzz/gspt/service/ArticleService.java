@@ -9,6 +9,8 @@ import com.wzz.gspt.dto.article.PublicArticleQueryRequest;
 import com.wzz.gspt.pojo.Article;
 import com.wzz.gspt.vo.ArticleVO;
 
+import java.util.List;
+
 /**
  * 文章服务接口
  */
@@ -68,6 +70,14 @@ public interface ArticleService extends IService<Article> {
      * @return 分页结果
      */
     IPage<ArticleVO> pagePublicArticles(PublicArticleQueryRequest request);
+
+    /**
+     * 随机获取指定数量的公共文章预览列表
+     *
+     * @param count 数量
+     * @return 文章预览列表
+     */
+    List<ArticleVO> randomPublicArticles(Integer count);
 
     /**
      * 管理员分页查询文章
