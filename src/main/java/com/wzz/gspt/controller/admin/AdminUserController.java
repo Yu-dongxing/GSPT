@@ -119,7 +119,7 @@ public class AdminUserController {
      * @param request 批量删除请求
      * @return 删除结果
      */
-    @GetMapping("/delete/batch")
+    @PostMapping("/delete/batch")
     public Result<?> deleteUsers(@RequestBody UserBatchDeleteRequest request) {
         userService.deleteUsers(request);
         return Result.success();

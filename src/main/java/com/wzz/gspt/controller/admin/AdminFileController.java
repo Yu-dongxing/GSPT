@@ -51,7 +51,7 @@ public class AdminFileController {
      * @param request 批量删除请求
      * @return 删除结果
      */
-    @GetMapping("/delete//batch")
+    @PostMapping("/delete/batch")
     public Result<?> deleteFiles(@RequestBody FileBatchDeleteRequest request) {
         fileRecordService.deleteAdminFiles(request);
         return Result.success();

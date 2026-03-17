@@ -1,9 +1,10 @@
 package com.wzz.gspt.exception;
 
-
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.SaTokenException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.ClientAbortException;
 import org.mybatis.spring.MyBatisSystemException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -15,16 +16,34 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException; // 新增：文件大小超限异常
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import com.wzz.gspt.common.*;
 import com.wzz.gspt.enums.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * 处理文件上传大小超过限制的异常
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public Result<?> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
+        // 这属于用户行为导致的错误，不打印长篇Error堆栈，用warn简单记录即可
+        log.warn("文件上传失败，超过系统允许的最大限制: {}", e.getMessage());
+        return Result.error(ResultCode.PARAM_IS_INVALID, "上传的文件过大，超出了系统允许的大小限制");
+    }
+
+    /**
+     * 处理客户端主动断开连接的异常（常发生于视频播放分片请求、大文件下载中止时）
+     * 必须返回 void，因为连接已断开，再去写入 Result JSON 会引发 HttpMessageNotWritableException
+     */
+    @ExceptionHandler(ClientAbortException.class)
+    public void handleClientAbortException(ClientAbortException e, HttpServletRequest request) {
+        // 客户端正常中断，不需要打印 error 级别堆栈，debug 或 info 记录即可
+        log.info("客户端主动断开了连接，请求路径: {}", request.getRequestURI());
+    }
 
     /**
      * 不支持的请求方法 (GET/POST 错用)
@@ -145,7 +164,6 @@ public class GlobalExceptionHandler {
         return Result.error(ResultCode.BUSINESS_ERROR, e.getMessage());
     }
 
-
     /**
      * 404 资源未找到
      */
@@ -172,5 +190,4 @@ public class GlobalExceptionHandler {
         log.error("系统未知致命异常: ", e);
         return Result.error(ResultCode.SYSTEM_INNER_ERROR);
     }
-
 }

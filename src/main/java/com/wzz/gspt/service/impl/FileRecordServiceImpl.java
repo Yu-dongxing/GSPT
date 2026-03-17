@@ -28,7 +28,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -257,6 +261,8 @@ public class FileRecordServiceImpl extends ServiceImpl<FileRecordMapper, FileRec
     private void fillUploaderInfo(FileRecord fileRecord) {
         Object loginId = StpUtil.getLoginIdDefaultNull();
         if (loginId == null) {
+            fileRecord.setUploaderId(null);
+            fileRecord.setUploaderName(resolveClientIp());
             return;
         }
 
@@ -267,11 +273,39 @@ public class FileRecordServiceImpl extends ServiceImpl<FileRecordMapper, FileRec
             User uploader = userMapper.selectById(uploaderId);
             if (uploader != null) {
                 fileRecord.setUploaderName(uploader.getUsername());
+            } else {
+                fileRecord.setUploaderName(resolveClientIp());
             }
         } catch (NumberFormatException ignored) {
             fileRecord.setUploaderId(null);
-            fileRecord.setUploaderName(null);
+            fileRecord.setUploaderName(resolveClientIp());
         }
+    }
+
+    /**
+     * 获取当前请求的客户端 IP 地址
+     *
+     * @return 客户端 IP
+     */
+    private String resolveClientIp() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return "未知IP";
+        }
+
+        HttpServletRequest request = attributes.getRequest();
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (StringUtils.hasText(forwardedFor)) {
+            return forwardedFor.split(",")[0].trim();
+        }
+
+        String realIp = request.getHeader("X-Real-IP");
+        if (StringUtils.hasText(realIp)) {
+            return realIp.trim();
+        }
+
+        String remoteAddr = request.getRemoteAddr();
+        return StringUtils.hasText(remoteAddr) ? remoteAddr.trim() : "未知IP";
     }
 
     /**
@@ -453,12 +487,12 @@ public class FileRecordServiceImpl extends ServiceImpl<FileRecordMapper, FileRec
     private void ensureFileNotReferenced(Long fileId) {
         Article articleReference = findArticleReference(fileId);
         if (articleReference != null) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "当前文件已被文章引用,不能直接删除");
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "当前文件<"+fileId+">已被文章<"+articleReference.getTitle()+">引用,不能直接删除");
         }
 
         User userReference = findUserReference(fileId);
         if (userReference != null) {
-            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "当前文件已被用户资料引用,不能直接删除");
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "当前文件<"+fileId+">已被用户资料<"+userReference.getUsername()+">引用,不能直接删除");
         }
     }
 

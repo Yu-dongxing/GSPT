@@ -26,7 +26,7 @@ public class Article extends BaseEntity {
      */
     @TableField("content")
     @ColumnComment("文章正文内容")
-    @ColumnType("TEXT")
+    @ColumnType("LONGTEXT")
     private String content;
 
     /**
