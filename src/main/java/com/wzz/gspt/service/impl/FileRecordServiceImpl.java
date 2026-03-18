@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wzz.gspt.config.properties.FileProperties;
 import com.wzz.gspt.dto.file.AdminFileQueryRequest;
 import com.wzz.gspt.dto.file.FileBatchDeleteRequest;
+import com.wzz.gspt.dto.file.FileCleanupRequest;
 import com.wzz.gspt.dto.file.MyFileQueryRequest;
 import com.wzz.gspt.enums.ResultCode;
 import com.wzz.gspt.enums.UserRole;
@@ -23,6 +24,7 @@ import com.wzz.gspt.utils.DateTimeRangeUtil;
 import com.wzz.gspt.utils.file.FileSecurityChecker;
 import com.wzz.gspt.utils.file.LocalFileStorageUtil;
 import com.wzz.gspt.vo.FileRecordVO;
+import com.wzz.gspt.vo.FileCleanupResultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +41,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -251,6 +257,67 @@ public class FileRecordServiceImpl extends ServiceImpl<FileRecordMapper, FileRec
         for (Long fileId : fileIds) {
             deleteFileIfUnreferenced(fileId);
         }
+    }
+
+    /**
+     * 清理未被业务引用的文件
+     *
+     * @param request 清理请求
+     * @return 清理结果
+     */
+    @Override
+    public FileCleanupResultVO cleanupUnusedFiles(FileCleanupRequest request) {
+        ensureCurrentUserIsAdmin();
+
+        boolean dryRun = request != null && Boolean.TRUE.equals(request.getDryRun());
+        List<FileRecord> allFiles = list();
+        List<FileRecord> safeFiles = allFiles == null ? new ArrayList<>() : allFiles;
+        Set<Long> referencedFileIds = collectReferencedFileIds();
+
+        List<FileRecord> unusedFiles = safeFiles.stream()
+                .filter(Objects::nonNull)
+                .filter(fileRecord -> fileRecord.getId() != null)
+                .filter(fileRecord -> !referencedFileIds.contains(fileRecord.getId()))
+                .collect(Collectors.toList());
+
+        FileCleanupResultVO.FileCleanupResultVOBuilder resultBuilder = FileCleanupResultVO.builder()
+                .dryRun(dryRun)
+                .totalScanned(safeFiles.size())
+                .unusedCount(unusedFiles.size())
+                .unusedFiles(unusedFiles.stream().map(this::buildFileRecordVO).collect(Collectors.toList()));
+
+        if (dryRun) {
+            return resultBuilder
+                    .deletedCount(0)
+                    .failedCount(0)
+                    .deletedFileIds(new ArrayList<>())
+                    .failedFiles(new ArrayList<>())
+                    .build();
+        }
+
+        List<Long> deletedFileIds = new ArrayList<>();
+        List<FileCleanupResultVO.FailedFileItem> failedFiles = new ArrayList<>();
+        for (FileRecord unusedFile : unusedFiles) {
+            try {
+                deleteFileIfUnreferenced(unusedFile.getId());
+                if (getById(unusedFile.getId()) == null) {
+                    deletedFileIds.add(unusedFile.getId());
+                } else {
+                    failedFiles.add(buildFailedFileItem(unusedFile, "文件当前仍被引用，未执行删除"));
+                }
+            } catch (BusinessException ex) {
+                failedFiles.add(buildFailedFileItem(unusedFile, ex.getMessage()));
+            } catch (RuntimeException ex) {
+                failedFiles.add(buildFailedFileItem(unusedFile, "删除失败: " + ex.getMessage()));
+            }
+        }
+
+        return resultBuilder
+                .deletedCount(deletedFileIds.size())
+                .failedCount(failedFiles.size())
+                .deletedFileIds(deletedFileIds)
+                .failedFiles(failedFiles)
+                .build();
     }
 
     /**
@@ -507,6 +574,46 @@ public class FileRecordServiceImpl extends ServiceImpl<FileRecordMapper, FileRec
     }
 
     /**
+     * 汇总当前所有被业务引用的文件 ID
+     *
+     * @return 被引用的文件 ID 集合
+     */
+    private Set<Long> collectReferencedFileIds() {
+        Set<Long> referencedFileIds = new HashSet<>();
+
+        List<Article> articles = articleMapper.selectList(new LambdaQueryWrapper<Article>()
+                .select(Article::getCoverFileId, Article::getPreviewImageId));
+        if (articles != null) {
+            for (Article article : articles) {
+                if (article == null) {
+                    continue;
+                }
+                if (article.getCoverFileId() != null) {
+                    referencedFileIds.add(article.getCoverFileId());
+                }
+                if (article.getPreviewImageId() != null) {
+                    referencedFileIds.add(article.getPreviewImageId());
+                }
+            }
+        }
+
+        List<User> users = userMapper.selectList(new LambdaQueryWrapper<User>()
+                .select(User::getLicenseFileId));
+        if (users != null) {
+            for (User user : users) {
+                if (user == null) {
+                    continue;
+                }
+                if (user.getLicenseFileId() != null) {
+                    referencedFileIds.add(user.getLicenseFileId());
+                }
+            }
+        }
+
+        return referencedFileIds;
+    }
+
+    /**
      * 查询文件是否被文章引用
      *
      * @param fileId 文件记录 ID
@@ -530,6 +637,21 @@ public class FileRecordServiceImpl extends ServiceImpl<FileRecordMapper, FileRec
         return userMapper.selectOne(new LambdaQueryWrapper<User>()
                 .eq(User::getLicenseFileId, fileId)
                 .last("limit 1"));
+    }
+
+    /**
+     * 构造删除失败文件信息
+     *
+     * @param fileRecord 文件记录
+     * @param reason 失败原因
+     * @return 失败明细
+     */
+    private FileCleanupResultVO.FailedFileItem buildFailedFileItem(FileRecord fileRecord, String reason) {
+        return FileCleanupResultVO.FailedFileItem.builder()
+                .fileId(fileRecord.getId())
+                .originalName(fileRecord.getOriginalName())
+                .reason(reason)
+                .build();
     }
 
     /**

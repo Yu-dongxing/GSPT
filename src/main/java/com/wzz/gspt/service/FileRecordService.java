@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.wzz.gspt.dto.file.AdminFileQueryRequest;
 import com.wzz.gspt.dto.file.FileBatchDeleteRequest;
+import com.wzz.gspt.dto.file.FileCleanupRequest;
 import com.wzz.gspt.dto.file.MyFileQueryRequest;
 import com.wzz.gspt.pojo.FileRecord;
+import com.wzz.gspt.vo.FileCleanupResultVO;
 import com.wzz.gspt.vo.FileRecordVO;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -83,4 +85,12 @@ public interface FileRecordService extends IService<FileRecord> {
      * @param fileIds 文件记录 ID 列表
      */
     void deleteFilesIfUnreferenced(List<Long> fileIds);
+
+    /**
+     * 清理未被业务引用的文件
+     *
+     * @param request 清理请求
+     * @return 清理结果
+     */
+    FileCleanupResultVO cleanupUnusedFiles(FileCleanupRequest request);
 }

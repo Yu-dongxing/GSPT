@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.wzz.gspt.common.Result;
 import com.wzz.gspt.dto.file.AdminFileQueryRequest;
 import com.wzz.gspt.dto.file.FileBatchDeleteRequest;
+import com.wzz.gspt.dto.file.FileCleanupRequest;
 import com.wzz.gspt.service.FileRecordService;
+import com.wzz.gspt.vo.FileCleanupResultVO;
 import com.wzz.gspt.vo.FileRecordVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -55,5 +57,16 @@ public class AdminFileController {
     public Result<?> deleteFiles(@RequestBody FileBatchDeleteRequest request) {
         fileRecordService.deleteAdminFiles(request);
         return Result.success();
+    }
+
+    /**
+     * 管理员一键清理未被文章和用户资料引用的文件
+     *
+     * @param request 清理请求
+     * @return 清理结果
+     */
+    @PostMapping("/cleanup-unused")
+    public Result<FileCleanupResultVO> cleanupUnusedFiles(@RequestBody(required = false) FileCleanupRequest request) {
+        return Result.success(fileRecordService.cleanupUnusedFiles(request == null ? new FileCleanupRequest() : request));
     }
 }
