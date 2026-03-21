@@ -3,6 +3,7 @@ package com.wzz.gspt.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.wzz.gspt.dto.article.AdminArticleQueryRequest;
+import com.wzz.gspt.dto.article.ArticleImageWallSaveRequest;
 import com.wzz.gspt.dto.article.ArticlePublishRequest;
 import com.wzz.gspt.dto.article.MyArticleQueryRequest;
 import com.wzz.gspt.dto.article.PublicArticleQueryRequest;
@@ -31,6 +32,14 @@ public interface ArticleService extends IService<Article> {
      * @return 修改后的文章
      */
     ArticleVO updateMyArticle(ArticlePublishRequest request);
+
+    /**
+     * 保存自己的文章图片墙
+     *
+     * @param request 图片墙请求
+     * @return 更新后的文章详情
+     */
+    ArticleVO saveMyArticleImageWall(ArticleImageWallSaveRequest request);
 
     /**
      * 查询当前用户自己的文章列表
@@ -110,6 +119,14 @@ public interface ArticleService extends IService<Article> {
      * @return 修改结果
      */
     ArticleVO updateAdminArticle(ArticlePublishRequest request);
+
+    /**
+     * 保存后台文章图片墙
+     *
+     * @param request 图片墙请求
+     * @return 更新后的文章详情
+     */
+    ArticleVO saveAdminArticleImageWall(ArticleImageWallSaveRequest request);
 
     /**
      * 管理员删除文章

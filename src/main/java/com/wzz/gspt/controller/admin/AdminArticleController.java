@@ -3,6 +3,7 @@ package com.wzz.gspt.controller.admin;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.wzz.gspt.common.Result;
 import com.wzz.gspt.dto.article.AdminArticleQueryRequest;
+import com.wzz.gspt.dto.article.ArticleImageWallSaveRequest;
 import com.wzz.gspt.dto.article.ArticlePublishRequest;
 import com.wzz.gspt.service.ArticleService;
 import com.wzz.gspt.vo.ArticleVO;
@@ -72,6 +73,28 @@ public class AdminArticleController {
     @PostMapping("/update")
     public Result<ArticleVO> updateAdminArticle(@RequestBody ArticlePublishRequest request) {
         return Result.success(articleService.updateAdminArticle(request));
+    }
+
+    /**
+     * 保存后台文章图片墙
+     *
+     * @param request 图片墙请求
+     * @return 更新后的文章详情
+     */
+    @PostMapping("/image-wall/save")
+    public Result<ArticleVO> saveAdminArticleImageWall(@RequestBody ArticleImageWallSaveRequest request) {
+        return Result.success(articleService.saveAdminArticleImageWall(request));
+    }
+
+    /**
+     * 编辑后台文章图片墙
+     *
+     * @param request 图片墙请求
+     * @return 更新后的文章详情
+     */
+    @PostMapping("/image-wall/update")
+    public Result<ArticleVO> updateAdminArticleImageWall(@RequestBody ArticleImageWallSaveRequest request) {
+        return Result.success(articleService.saveAdminArticleImageWall(request));
     }
 
     /**

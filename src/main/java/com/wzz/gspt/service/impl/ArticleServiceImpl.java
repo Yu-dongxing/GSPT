@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wzz.gspt.dto.article.AdminArticleQueryRequest;
+import com.wzz.gspt.dto.article.ArticleImageItemRequest;
+import com.wzz.gspt.dto.article.ArticleImageWallSaveRequest;
 import com.wzz.gspt.dto.article.ArticlePublishRequest;
 import com.wzz.gspt.dto.article.MyArticleQueryRequest;
 import com.wzz.gspt.dto.article.PublicArticleQueryRequest;
@@ -15,15 +17,18 @@ import com.wzz.gspt.enums.ResultCode;
 import com.wzz.gspt.enums.UserAuditStatus;
 import com.wzz.gspt.enums.UserRole;
 import com.wzz.gspt.exception.BusinessException;
+import com.wzz.gspt.mapper.ArticleImageMapper;
 import com.wzz.gspt.mapper.ArticleMapper;
 import com.wzz.gspt.mapper.FileRecordMapper;
 import com.wzz.gspt.mapper.UserMapper;
 import com.wzz.gspt.pojo.Article;
+import com.wzz.gspt.pojo.ArticleImage;
 import com.wzz.gspt.pojo.FileRecord;
 import com.wzz.gspt.pojo.User;
 import com.wzz.gspt.service.ArticleService;
 import com.wzz.gspt.service.FileRecordService;
 import com.wzz.gspt.utils.DateTimeRangeUtil;
+import com.wzz.gspt.vo.ArticleImageVO;
 import com.wzz.gspt.vo.ArticleVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,7 +36,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -41,36 +49,28 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> implements ArticleService {
 
-    /**
-     * 文件记录数据访问层
-     */
     private final FileRecordMapper fileRecordMapper;
-
-    /**
-     * 用户数据访问层
-     */
+    private final ArticleImageMapper articleImageMapper;
     private final UserMapper userMapper;
-
-    /**
-     * 文件记录服务
-     */
     private final FileRecordService fileRecordService;
 
     /**
-     * 发表文章
-     *
-     * @param request 发文请求
-     * @return 发文结果
+     * 发布新文章
+     * @param request 发布参数
+     * @return 文章视图对象
      */
     @Override
     @Transactional
     public ArticleVO publishArticle(ArticlePublishRequest request) {
+        // 1. 基础校验
         validateArticleRequest(request, false);
 
+        // 2. 权限与分类合法性校验
         User currentUser = getCurrentUser();
         validateArticleCategoryPermission(currentUser, request.getCategory());
         validateArticleCover(request);
 
+        // 3. 填充并保存文章实体
         Article article = new Article();
         fillArticle(article, request, currentUser);
 
@@ -78,38 +78,65 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (!saved) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "发布文章失败");
         }
+
+        // 4. 处理图片墙
+        replaceArticleImageWall(article.getId(), request.getImageWall(), null);
         return buildArticleVO(article);
     }
 
     /**
-     * 修改自己的文章
-     *
-     * @param request 修改请求
-     * @return 修改后的文章
+     * 更新用户自己的文章
+     * @param request 修改参数
+     * @return 文章视图对象
      */
     @Override
     @Transactional
     public ArticleVO updateMyArticle(ArticlePublishRequest request) {
+        // 1. 基础校验
         validateArticleRequest(request, true);
 
+        // 2. 权限与分类合法性校验
         User currentUser = getCurrentUser();
         validateArticleCategoryPermission(currentUser, request.getCategory());
         validateArticleCover(request);
 
+        // 3. 校验文章归属权
         Article article = getOwnedArticle(request.getId(), currentUser.getId());
-        fillArticle(article, request, currentUser);
 
+        // 4. 记录旧的图片墙文件ID，用于后续清理未引用文件
+        List<Long> oldImageWallFileIds = getArticleImageWallFileIds(article.getId());
+
+        // 5. 更新文章信息
+        fillArticle(article, request, currentUser);
         boolean updated = updateById(article);
         if (!updated) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "修改文章失败");
+        }
+
+        // 6. 替换图片墙
+        if (request.getImageWall() != null) {
+            replaceArticleImageWall(article.getId(), request.getImageWall(), oldImageWallFileIds);
         }
         return buildArticleVO(article);
     }
 
     /**
-     * 查询当前用户自己的文章列表
-     *
-     * @param request 查询请求
+     * 保存/更新文章图片墙（独立操作接口）
+     * @param request 图片墙请求参数
+     * @return 文章视图对象
+     */
+    @Override
+    @Transactional
+    public ArticleVO saveMyArticleImageWall(ArticleImageWallSaveRequest request) {
+        validateArticleImageWallRequest(request);
+        Article article = getOwnedArticle(request.getArticleId(), getCurrentUserId());
+        replaceArticleImageWall(article.getId(), request.getImages(), getArticleImageWallFileIds(article.getId()));
+        return buildArticleVO(article);
+    }
+
+    /**
+     * 分页查询当前登录用户的文章
+     * @param request 查询条件（标题、状态、分类、日期范围等）
      * @return 分页结果
      */
     @Override
@@ -119,6 +146,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         Long currentUserId = getCurrentUserId();
         var startCreateTime = DateTimeRangeUtil.parseDateTime(request.getStartCreateTime(), false);
         var endCreateTime = DateTimeRangeUtil.parseDateTime(request.getEndCreateTime(), true);
+
         Page<Article> page = new Page<>(request.getPageNum(), request.getPageSize());
         LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<Article>()
                 .eq(Article::getAuthorId, currentUserId)
@@ -134,10 +162,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 查询当前用户自己的文章详情
-     *
-     * @param articleId 文章 ID
-     * @return 文章详情
+     * 获取当前用户自己的文章详情
+     * @param articleId 文章ID
+     * @return 文章视图对象
      */
     @Override
     public ArticleVO getMyArticleDetail(Long articleId) {
@@ -149,9 +176,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 删除当前用户自己的文章
-     *
-     * @param articleId 文章 ID
+     * 删除当前用户的文章（级联删除关联图片和物理文件引用）
+     * @param articleId 文章ID
      */
     @Override
     @Transactional
@@ -164,30 +190,29 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (!removed) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "删除文章失败");
         }
+        // 删除文章关联的文件记录
         deleteArticleFiles(article);
     }
 
     /**
-     * 获取登录用户可访问的文章详情
-     *
-     * @param articleId 文章 ID
-     * @return 文章详情
+     * 公开查询：获取已发布文章详情
+     * @param articleId 文章ID
+     * @return 文章视图对象
      */
     @Override
     public ArticleVO getArticleDetail(Long articleId) {
         if (articleId == null) {
             throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "文章ID不能为空");
         }
-        getCurrentUserId();
+        getCurrentUserId(); // 验证登录
         Article article = getPublishedArticle(articleId);
         return buildArticleVO(article);
     }
 
     /**
-     * 访客公共文章分页查询
-     *
-     * @param request 查询请求
-     * @return 分页结果
+     * 公开查询：分页获取所有已发布的文章
+     * @param request 查询参数
+     * @return 分页结果（内容会截断）
      */
     @Override
     public IPage<ArticleVO> pagePublicArticles(PublicArticleQueryRequest request) {
@@ -195,9 +220,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         var startCreateTime = DateTimeRangeUtil.parseDateTime(request.getStartCreateTime(), false);
         var endCreateTime = DateTimeRangeUtil.parseDateTime(request.getEndCreateTime(), true);
+
         Page<Article> page = new Page<>(request.getPageNum(), request.getPageSize());
         LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<Article>()
-                .eq(Article::getStatus, ArticleStatus.PUBLISHED)
+                .eq(Article::getStatus, ArticleStatus.PUBLISHED) // 仅限已发布
                 .like(StringUtils.hasText(request.getTitle()), Article::getTitle, request.getTitle())
                 .like(StringUtils.hasText(request.getAuthorName()), Article::getAuthorName, request.getAuthorName())
                 .eq(request.getCategory() != null, Article::getCategory, request.getCategory())
@@ -206,14 +232,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 .orderByDesc(Article::getCreateTime);
 
         Page<Article> articlePage = page(page, wrapper);
-        return convertArticlePage(articlePage, true);
+        return convertArticlePage(articlePage, true); // true 表示截断正文预览
     }
 
     /**
-     * 随机获取指定数量的公共文章预览列表
-     *
-     * @param count 数量
-     * @return 文章预览列表
+     * 随机获取已发布文章（用于推荐等场景）
+     * @param count 获取数量
+     * @return 文章列表
      */
     @Override
     public List<ArticleVO> randomPublicArticles(Integer count) {
@@ -234,9 +259,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 管理员分页查询文章
-     *
-     * @param request 查询请求
+     * 管理后台：分页查询所有文章
+     * @param request 查询参数
      * @return 分页结果
      */
     @Override
@@ -246,6 +270,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         var startCreateTime = DateTimeRangeUtil.parseDateTime(request.getStartCreateTime(), false);
         var endCreateTime = DateTimeRangeUtil.parseDateTime(request.getEndCreateTime(), true);
+
         Page<Article> page = new Page<>(request.getPageNum(), request.getPageSize());
         LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<Article>()
                 .like(StringUtils.hasText(request.getTitle()), Article::getTitle, request.getTitle())
@@ -261,10 +286,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 管理员获取文章详情
-     *
-     * @param articleId 文章 ID
-     * @return 文章详情
+     * 管理后台：查看任意文章详情
+     * @param articleId 文章ID
+     * @return 文章视图对象
      */
     @Override
     public ArticleVO getAdminArticleDetail(Long articleId) {
@@ -280,10 +304,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 管理员新增文章
-     *
-     * @param request 新增请求
-     * @return 新增结果
+     * 管理后台：直接发布文章
+     * @param request 发布参数
+     * @return 文章视图对象
      */
     @Override
     @Transactional
@@ -301,14 +324,14 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (!saved) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "管理员新增文章失败");
         }
+        replaceArticleImageWall(article.getId(), request.getImageWall(), null);
         return buildArticleVO(article);
     }
 
     /**
-     * 管理员修改文章
-     *
-     * @param request 修改请求
-     * @return 修改结果
+     * 管理后台：修改文章
+     * @param request 修改参数
+     * @return 文章视图对象
      */
     @Override
     @Transactional
@@ -324,19 +347,40 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         User currentUser = getCurrentUser();
+        List<Long> oldImageWallFileIds = getArticleImageWallFileIds(article.getId());
         fillArticle(article, request, currentUser);
 
         boolean updated = updateById(article);
         if (!updated) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "管理员修改文章失败");
         }
+        if (request.getImageWall() != null) {
+            replaceArticleImageWall(article.getId(), request.getImageWall(), oldImageWallFileIds);
+        }
         return buildArticleVO(article);
     }
 
     /**
-     * 管理员删除文章
-     *
-     * @param articleId 文章 ID
+     * 管理后台：保存图片墙
+     * @param request 图片墙参数
+     * @return 文章视图对象
+     */
+    @Override
+    @Transactional
+    public ArticleVO saveAdminArticleImageWall(ArticleImageWallSaveRequest request) {
+        ensureCurrentUserIsAdmin();
+        validateArticleImageWallRequest(request);
+        Article article = getById(request.getArticleId());
+        if (article == null) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "文章不存在");
+        }
+        replaceArticleImageWall(article.getId(), request.getImages(), getArticleImageWallFileIds(article.getId()));
+        return buildArticleVO(article);
+    }
+
+    /**
+     * 管理后台：删除文章
+     * @param articleId 文章ID
      */
     @Override
     @Transactional
@@ -357,10 +401,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 校验文章请求参数
-     *
-     * @param request 请求对象
-     * @param isUpdate 是否为修改
+     * 内部方法：验证文章基础请求参数
      */
     private void validateArticleRequest(ArticlePublishRequest request, boolean isUpdate) {
         if (request == null) {
@@ -381,14 +422,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (request.getStatus() == null) {
             request.setStatus(ArticleStatus.PUBLISHED);
         }
+        validateArticleWallImages(request.getImageWall());
     }
 
     /**
-     * 校验分页参数
-     *
-     * @param pageNum 页码
-     * @param pageSize 每页条数
-     * @param nullMessage 空请求提示
+     * 内部方法：分页参数通用验证
      */
     private void validateCommonPageRequest(Long pageNum, Long pageSize, String nullMessage) {
         if (pageNum == null && pageSize == null) {
@@ -403,9 +441,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 校验文章封面与预览图信息
-     *
-     * @param request 请求对象
+     * 内部方法：校验封面图和预览图
      */
     private void validateArticleCover(ArticlePublishRequest request) {
         validateArticleImage(request.getCoverFileId(), request.getCoverImageUrl(), "封面");
@@ -413,11 +449,17 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 校验文章图片文件信息
-     *
-     * @param fileId 文件 ID
-     * @param imageUrl 图片访问路径
-     * @param imageName 图片名称
+     * 内部方法：校验图片墙请求
+     */
+    private void validateArticleImageWallRequest(ArticleImageWallSaveRequest request) {
+        if (request == null || request.getArticleId() == null) {
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "文章ID不能为空");
+        }
+        validateArticleWallImages(request.getImages());
+    }
+
+    /**
+     * 内部方法：单张图片关联校验（校验文件是否存在及路径是否匹配）
      */
     private void validateArticleImage(Long fileId, String imageUrl, String imageName) {
         if (fileId == null && !StringUtils.hasText(imageUrl)) {
@@ -436,13 +478,56 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (!trimmedImageUrl.equals(fileRecord.getUrlPath()) && !trimmedImageUrl.endsWith(fileRecord.getUrlPath())) {
             throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), imageName + "文件路径不匹配");
         }
+        ensureImageFile(fileRecord, imageName);
     }
 
     /**
-     * 校验当前用户是否具备指定文章分类的发文权限
-     *
-     * @param user 当前用户
-     * @param category 文章分类
+     * 内部方法：批量校验图片墙图片
+     */
+    private void validateArticleWallImages(List<ArticleImageItemRequest> images) {
+        if (images == null || images.isEmpty()) {
+            return;
+        }
+        if (images.size() > 50) {
+            throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "文章图片墙最多支持50张图片");
+        }
+
+        Set<Long> distinctFileIds = new HashSet<>();
+        for (int i = 0; i < images.size(); i++) {
+            ArticleImageItemRequest item = images.get(i);
+            if (item == null) {
+                throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "图片墙第" + (i + 1) + "项不能为空");
+            }
+            if (item.getFileId() == null || !StringUtils.hasText(item.getImageUrl())) {
+                throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "图片墙图片文件ID和访问路径必须同时提供");
+            }
+            if (!distinctFileIds.add(item.getFileId())) {
+                throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "图片墙中存在重复的文件ID:" + item.getFileId());
+            }
+            validateArticleImage(item.getFileId(), item.getImageUrl(), "图片墙");
+        }
+    }
+
+    /**
+     * 内部方法：确保文件后缀为图片格式
+     */
+    private void ensureImageFile(FileRecord fileRecord, String imageName) {
+        String suffix = fileRecord.getFileSuffix();
+        if (!StringUtils.hasText(suffix)) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), imageName + "文件类型不正确");
+        }
+        String normalizedSuffix = suffix.trim().toLowerCase();
+        if (!normalizedSuffix.equals(".jpg")
+                && !normalizedSuffix.equals(".jpeg")
+                && !normalizedSuffix.equals(".png")
+                && !normalizedSuffix.equals(".gif")
+                && !normalizedSuffix.equals(".webp")) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), imageName + "仅支持图片文件");
+        }
+    }
+
+    /**
+     * 内部方法：根据用户角色校验可发布的文章分类
      */
     private void validateArticleCategoryPermission(User user, ArticleCategory category) {
         if (user.getRole() == UserRole.USER && category != ArticleCategory.DEMAND) {
@@ -462,9 +547,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 校验管理员文章分类
-     *
-     * @param category 文章分类
+     * 内部方法：管理员发布文章时的分类校验
      */
     private void validateAdminArticleCategory(ArticleCategory category) {
         if (category != ArticleCategory.COMPANY) {
@@ -473,11 +556,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 填充文章信息
-     *
-     * @param article 文章对象
-     * @param request 请求对象
-     * @param user 当前用户
+     * 内部方法：将 Request 数据填充至 Article 实体
      */
     private void fillArticle(Article article, ArticlePublishRequest request, User user) {
         article.setTitle(request.getTitle().trim());
@@ -494,9 +573,45 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 删除文章后同步清理已无引用的文件
-     *
-     * @param article 文章对象
+     * 内部方法：全量替换图片墙（先删后增，并清理无用的文件引用）
+     */
+    private void replaceArticleImageWall(Long articleId, List<ArticleImageItemRequest> imageRequests, List<Long> oldFileIds) {
+        if (articleId == null) {
+            return;
+        }
+
+        // 删除旧的关联关系
+        deleteArticleImageWallRelations(articleId);
+
+        // 插入新的关联关系
+        if (imageRequests != null && !imageRequests.isEmpty()) {
+            for (int i = 0; i < imageRequests.size(); i++) {
+                ArticleImageItemRequest item = imageRequests.get(i);
+                ArticleImage articleImage = new ArticleImage();
+                articleImage.setArticleId(articleId);
+                articleImage.setFileId(item.getFileId());
+                articleImage.setImageUrl(item.getImageUrl().trim());
+                articleImage.setSortOrder(item.getSortOrder() == null ? i + 1 : item.getSortOrder());
+                articleImageMapper.insert(articleImage);
+            }
+        }
+
+        // 如果存在旧文件ID，对比新ID列表，删除不再被引用的物理文件
+        if (oldFileIds != null && !oldFileIds.isEmpty()) {
+            Set<Long> newFileIds = imageRequests == null ? new HashSet<>() : imageRequests.stream()
+                    .filter(item -> item != null && item.getFileId() != null)
+                    .map(ArticleImageItemRequest::getFileId)
+                    .collect(Collectors.toSet());
+            List<Long> removedFileIds = oldFileIds.stream()
+                    .filter(fileId -> !newFileIds.contains(fileId))
+                    .distinct()
+                    .collect(Collectors.toList());
+            fileRecordService.deleteFilesIfUnreferenced(removedFileIds);
+        }
+    }
+
+    /**
+     * 内部方法：删除文章相关的所有文件引用（封面、预览图、图片墙）
      */
     private void deleteArticleFiles(Article article) {
         List<Long> fileIds = new ArrayList<>();
@@ -506,13 +621,48 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (article.getPreviewImageId() != null) {
             fileIds.add(article.getPreviewImageId());
         }
+        fileIds.addAll(getArticleImageWallFileIds(article.getId()));
+
+        // 删除数据库中的图片墙关联记录
+        deleteArticleImageWallRelations(article.getId());
+
+        // 异步或逻辑删除无引用的物理文件
         fileRecordService.deleteFilesIfUnreferenced(fileIds);
     }
 
     /**
-     * 获取当前登录用户
-     *
-     * @return 当前登录用户
+     * 内部方法：仅删除图片墙关联关系
+     */
+    private void deleteArticleImageWallRelations(Long articleId) {
+        if (articleId == null) {
+            return;
+        }
+        articleImageMapper.delete(new LambdaQueryWrapper<ArticleImage>()
+                .eq(ArticleImage::getArticleId, articleId));
+    }
+
+    /**
+     * 内部方法：获取指定文章关联的图片墙文件ID列表
+     */
+    private List<Long> getArticleImageWallFileIds(Long articleId) {
+        if (articleId == null) {
+            return new ArrayList<>();
+        }
+        List<ArticleImage> articleImages = articleImageMapper.selectList(new LambdaQueryWrapper<ArticleImage>()
+                .eq(ArticleImage::getArticleId, articleId)
+                .select(ArticleImage::getFileId));
+        if (articleImages == null || articleImages.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return articleImages.stream()
+                .map(ArticleImage::getFileId)
+                .filter(fileId -> fileId != null)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 内部方法：获取当前登录用户的完整信息
      */
     private User getCurrentUser() {
         User user = userMapper.selectById(getCurrentUserId());
@@ -523,9 +673,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 获取当前登录用户 ID
-     *
-     * @return 当前登录用户 ID
+     * 内部方法：通过 Sa-Token 获取当前登录用户ID
      */
     private Long getCurrentUserId() {
         Object loginId = StpUtil.getLoginIdDefaultNull();
@@ -540,11 +688,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 获取当前用户拥有的文章
-     *
-     * @param articleId 文章 ID
-     * @param currentUserId 当前用户 ID
-     * @return 文章对象
+     * 内部方法：获取并验证文章是否属于该用户
      */
     private Article getOwnedArticle(Long articleId, Long currentUserId) {
         Article article = getById(articleId);
@@ -558,10 +702,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 获取已发布文章
-     *
-     * @param articleId 文章 ID
-     * @return 文章对象
+     * 内部方法：获取并验证文章是否已发布
      */
     private Article getPublishedArticle(Long articleId) {
         Article article = getById(articleId);
@@ -575,7 +716,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 确保当前登录用户为管理员
+     * 内部方法：强制检查当前用户是否为管理员
      */
     private void ensureCurrentUserIsAdmin() {
         User currentUser = getCurrentUser();
@@ -585,11 +726,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 转换文章分页结果
-     *
-     * @param articlePage 原始分页结果
-     * @param truncateContent 是否截断正文
-     * @return 转换后的分页结果
+     * 内部方法：将文章分页结果转换为 VO 分页结果
      */
     private IPage<ArticleVO> convertArticlePage(Page<Article> articlePage, boolean truncateContent) {
         Page<ArticleVO> resultPage = new Page<>(articlePage.getCurrent(), articlePage.getSize(), articlePage.getTotal());
@@ -600,21 +737,15 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 构造文章返回对象
-     *
-     * @param article 文章对象
-     * @return 文章返回对象
+     * 内部方法：构建文章 VO（默认不截断内容）
      */
     private ArticleVO buildArticleVO(Article article) {
         return buildArticleVO(article, false);
     }
 
     /**
-     * 构造文章返回对象
-     *
-     * @param article 文章对象
-     * @param truncateContent 是否截断正文
-     * @return 文章返回对象
+     * 内部方法：构建文章 VO
+     * @param truncateContent 是否需要截断内容（用于列表显示预览）
      */
     private ArticleVO buildArticleVO(Article article, boolean truncateContent) {
         return ArticleVO.builder()
@@ -626,6 +757,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 .coverImageUrl(article.getCoverImageUrl())
                 .previewImageId(article.getPreviewImageId())
                 .previewImageUrl(article.getPreviewImageUrl())
+                .imageWall(buildArticleImageVOs(article.getId()))
                 .authorId(article.getAuthorId())
                 .authorName(article.getAuthorName())
                 .status(article.getStatus())
@@ -636,10 +768,33 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     /**
-     * 将正文裁剪到前 50 个字符
-     *
-     * @param content 正文内容
-     * @return 裁剪后的内容
+     * 内部方法：构建图片墙 VO 列表（带排序）
+     */
+    private List<ArticleImageVO> buildArticleImageVOs(Long articleId) {
+        if (articleId == null) {
+            return new ArrayList<>();
+        }
+        List<ArticleImage> articleImages = articleImageMapper.selectList(new LambdaQueryWrapper<ArticleImage>()
+                .eq(ArticleImage::getArticleId, articleId)
+                .orderByAsc(ArticleImage::getSortOrder)
+                .orderByAsc(ArticleImage::getId));
+        if (articleImages == null || articleImages.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return articleImages.stream()
+                .sorted(Comparator.comparing(ArticleImage::getSortOrder, Comparator.nullsLast(Integer::compareTo))
+                        .thenComparing(ArticleImage::getId, Comparator.nullsLast(Long::compareTo)))
+                .map(articleImage -> ArticleImageVO.builder()
+                        .id(articleImage.getId())
+                        .fileId(articleImage.getFileId())
+                        .imageUrl(articleImage.getImageUrl())
+                        .sortOrder(articleImage.getSortOrder())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 内部方法：截断正文内容作为预览
      */
     private String abbreviateContent(String content) {
         if (!StringUtils.hasText(content) || content.length() <= 50) {

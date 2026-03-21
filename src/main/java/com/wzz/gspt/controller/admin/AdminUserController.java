@@ -8,6 +8,7 @@ import com.wzz.gspt.dto.user.UserAdminSaveRequest;
 import com.wzz.gspt.dto.user.UserBatchDeleteRequest;
 import com.wzz.gspt.dto.user.UserLoginRequest;
 import com.wzz.gspt.service.UserService;
+import com.wzz.gspt.vo.UserAdminVO;
 import com.wzz.gspt.vo.UserLoginVO;
 import com.wzz.gspt.vo.UserRegisterVO;
 import lombok.RequiredArgsConstructor;
@@ -64,7 +65,7 @@ public class AdminUserController {
      * @return 分页结果
      */
     @PostMapping("/page")
-    public Result<IPage<UserRegisterVO>> pageUsers(@RequestBody UserAdminQueryRequest request) {
+    public Result<IPage<UserAdminVO>> pageUsers(@RequestBody UserAdminQueryRequest request) {
         return Result.success(userService.pageUsers(request));
     }
 

@@ -2,6 +2,7 @@ package com.wzz.gspt.controller.article;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.wzz.gspt.common.Result;
+import com.wzz.gspt.dto.article.ArticleImageWallSaveRequest;
 import com.wzz.gspt.dto.article.ArticlePublishRequest;
 import com.wzz.gspt.dto.article.MyArticleQueryRequest;
 import com.wzz.gspt.dto.article.PublicArticleQueryRequest;
@@ -86,6 +87,28 @@ public class ArticleController {
     @PostMapping("/my/update")
     public Result<ArticleVO> updateMyArticle(@RequestBody ArticlePublishRequest request) {
         return Result.success(articleService.updateMyArticle(request));
+    }
+
+    /**
+     * 保存当前用户文章图片墙
+     *
+     * @param request 图片墙请求
+     * @return 更新后的文章详情
+     */
+    @PostMapping("/my/image-wall/save")
+    public Result<ArticleVO> saveMyArticleImageWall(@RequestBody ArticleImageWallSaveRequest request) {
+        return Result.success(articleService.saveMyArticleImageWall(request));
+    }
+
+    /**
+     * 编辑当前用户文章图片墙
+     *
+     * @param request 图片墙请求
+     * @return 更新后的文章详情
+     */
+    @PostMapping("/my/image-wall/update")
+    public Result<ArticleVO> updateMyArticleImageWall(@RequestBody ArticleImageWallSaveRequest request) {
+        return Result.success(articleService.saveMyArticleImageWall(request));
     }
 
     /**

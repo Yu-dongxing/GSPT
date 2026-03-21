@@ -1,16 +1,21 @@
 package com.wzz.gspt.controller.user;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.wzz.gspt.common.Result;
+import com.wzz.gspt.dto.user.UserArticleQueryRequest;
 import com.wzz.gspt.dto.user.UserEnterpriseRegisterRequest;
 import com.wzz.gspt.dto.user.UserLoginRequest;
 import com.wzz.gspt.dto.user.UserNormalRegisterRequest;
 import com.wzz.gspt.dto.user.UserPasswordChangeRequest;
 import com.wzz.gspt.dto.user.UserProfileUpdateRequest;
 import com.wzz.gspt.service.UserService;
+import com.wzz.gspt.vo.ArticleVO;
 import com.wzz.gspt.vo.UserLoginVO;
+import com.wzz.gspt.vo.UserProfileVO;
 import com.wzz.gspt.vo.UserRegisterVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -83,6 +88,28 @@ public class UserController {
     @GetMapping("/current")
     public Result<UserRegisterVO> getCurrentUser() {
         return Result.success(userService.getCurrentUser());
+    }
+
+    /**
+     * 根据用户ID查询个人信息
+     *
+     * @param userId 用户ID
+     * @return 个人信息
+     */
+    @GetMapping("/profile/{userId}")
+    public Result<UserProfileVO> getUserProfile(@PathVariable Long userId) {
+        return Result.success(userService.getUserProfile(userId));
+    }
+
+    /**
+     * 根据用户ID分页查询文章列表
+     *
+     * @param request 查询请求
+     * @return 文章列表
+     */
+    @PostMapping("/profile/articles")
+    public Result<IPage<ArticleVO>> pageUserArticles(@RequestBody UserArticleQueryRequest request) {
+        return Result.success(userService.pageUserArticles(request));
     }
 
     /**

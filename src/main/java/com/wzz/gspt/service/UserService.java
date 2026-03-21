@@ -7,12 +7,16 @@ import com.wzz.gspt.dto.user.UserAdminQueryRequest;
 import com.wzz.gspt.dto.user.UserAdminSaveRequest;
 import com.wzz.gspt.dto.user.UserBatchDeleteRequest;
 import com.wzz.gspt.dto.user.UserEnterpriseRegisterRequest;
+import com.wzz.gspt.dto.user.UserArticleQueryRequest;
 import com.wzz.gspt.dto.user.UserLoginRequest;
 import com.wzz.gspt.dto.user.UserNormalRegisterRequest;
 import com.wzz.gspt.dto.user.UserPasswordChangeRequest;
 import com.wzz.gspt.dto.user.UserProfileUpdateRequest;
 import com.wzz.gspt.pojo.User;
+import com.wzz.gspt.vo.ArticleVO;
+import com.wzz.gspt.vo.UserAdminVO;
 import com.wzz.gspt.vo.UserLoginVO;
+import com.wzz.gspt.vo.UserProfileVO;
 import com.wzz.gspt.vo.UserRegisterVO;
 
 /**
@@ -65,6 +69,22 @@ public interface UserService extends IService<User> {
     UserRegisterVO getCurrentUser();
 
     /**
+     * 根据用户ID获取公开个人信息
+     *
+     * @param userId 用户ID
+     * @return 用户个人信息
+     */
+    UserProfileVO getUserProfile(Long userId);
+
+    /**
+     * 根据用户ID分页查询文章列表
+     *
+     * @param request 查询请求
+     * @return 文章分页结果
+     */
+    IPage<ArticleVO> pageUserArticles(UserArticleQueryRequest request);
+
+    /**
      * 修改当前登录用户个人信息
      *
      * @param request 修改请求
@@ -93,7 +113,7 @@ public interface UserService extends IService<User> {
      * @param request 查询请求
      * @return 用户分页结果
      */
-    IPage<UserRegisterVO> pageUsers(UserAdminQueryRequest request);
+    IPage<UserAdminVO> pageUsers(UserAdminQueryRequest request);
 
     /**
      * 管理员获取用户详情

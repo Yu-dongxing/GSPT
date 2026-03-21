@@ -1,14 +1,14 @@
-2026-03-18 17:40:19.963 [main] INFO  com.wzz.gspt.GSPTApplicationTests - Starting GSPTApplicationTests using Java 21.0.10 with PID 19884 (started by yuxs in E:\CODEPROJECT\JAVA\GSPT)
-2026-03-18 17:40:19.971 [main] INFO  com.wzz.gspt.GSPTApplicationTests - No active profile set, falling back to 1 default profile: "default"
-2026-03-18 17:40:20.324 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 9.0.1.Final
-2026-03-18 17:40:21.005 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
-2026-03-18 17:40:21.007 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
-2026-03-18 17:40:21.044 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 23 ms. Found 0 Redis repository interfaces.
-2026-03-18 17:40:22.457 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
-2026-03-18 17:40:22.714 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@6dc2e473
-2026-03-18 17:40:22.717 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
-2026-03-18 17:40:24.297 [main] INFO  com.baomidou.mybatisplus.extension.spring.MybatisPlusApplicationContextAware - Register ApplicationContext instances org.springframework.web.context.support.GenericWebApplicationContext@24d61e4
-2026-03-18 17:40:24.983 [main] INFO  org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
-2026-03-18 17:40:25.051 [main] INFO  com.wzz.gspt.GSPTApplicationTests - Started GSPTApplicationTests in 5.559 seconds (process running for 7.108)
-2026-03-18 17:40:25.720 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
-2026-03-18 17:40:25.733 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-03-20 17:48:22.482 [main] INFO  com.wzz.gspt.GSPTApplicationTests - Starting GSPTApplicationTests using Java 21.0.10 with PID 21560 (started by yuxs in E:\CODEPROJECT\JAVA\GSPT)
+2026-03-20 17:48:22.491 [main] INFO  com.wzz.gspt.GSPTApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2026-03-20 17:48:22.862 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 9.0.1.Final
+2026-03-20 17:48:23.548 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-03-20 17:48:23.550 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-03-20 17:48:23.588 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 24 ms. Found 0 Redis repository interfaces.
+2026-03-20 17:48:25.063 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-03-20 17:48:25.279 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@50e24ea4
+2026-03-20 17:48:25.281 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-03-20 17:48:26.928 [main] INFO  com.baomidou.mybatisplus.extension.spring.MybatisPlusApplicationContextAware - Register ApplicationContext instances org.springframework.web.context.support.GenericWebApplicationContext@24d61e4
+2026-03-20 17:48:27.436 [main] INFO  org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
+2026-03-20 17:48:27.496 [main] INFO  com.wzz.gspt.GSPTApplicationTests - Started GSPTApplicationTests in 5.467 seconds (process running for 6.894)
+2026-03-20 17:48:28.209 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-03-20 17:48:28.221 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

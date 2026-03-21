@@ -4,6 +4,8 @@ import com.wzz.gspt.enums.ArticleCategory;
 import com.wzz.gspt.enums.ArticleStatus;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 发布或修改文章请求对象
  */
@@ -49,6 +51,11 @@ public class ArticlePublishRequest {
      * 预览图访问路径
      */
     private String previewImageUrl;
+
+    /**
+     * 图片墙
+     */
+    private List<ArticleImageItemRequest> imageWall;
 
     /**
      * 文章状态

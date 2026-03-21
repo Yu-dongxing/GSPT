@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 文章返回对象
@@ -58,6 +59,11 @@ public class ArticleVO {
      * 预览图访问路径
      */
     private String previewImageUrl;
+
+    /**
+     * 图片墙
+     */
+    private List<ArticleImageVO> imageWall;
 
     /**
      * 作者 ID
