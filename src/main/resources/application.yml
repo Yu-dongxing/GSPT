@@ -20,8 +20,8 @@ spring:
     name: GSPT
   servlet:
     multipart:
-      max-file-size: 20MB
-      max-request-size: 20MB
+      max-file-size: 500MB
+      max-request-size: 500MB
 
   # =========================================================
   # Java 21 虚拟线程
@@ -131,8 +131,8 @@ file:
   upload-path: ./uploads/
   # Web 访问前缀
   access-path: /uploads/**
-  # 单个文件允许上传的最大字节数
-  max-size: 20971520
+  # 设置为 200MB
+  max-size: 200MB
   allowed-extensions:
     - .jpg
     - .jpeg
@@ -147,6 +147,15 @@ file:
     - .xlsx
     - .zip
     - .mp4
+    # --- 苹果系统特有格式开始 ---
+    - .heic     # iPhone 默认照片格式
+    - .heif     # 高效率图像格式
+    - .mov      # 苹果 QuickTime 视频格式
+    - .m4a      # 苹果无损/AAC 音频格式
+    - .pages    # Apple Pages 文档
+    - .numbers  # Apple Numbers 表格
+    - .key      # Apple Keynote 演示文稿
+    # --- 苹果系统特有格式结束 ---
   allowed-content-types:
     - image/jpeg
     - image/png
@@ -161,3 +170,13 @@ file:
     - application/zip
     - application/x-zip-compressed
     - video/mp4
+    # --- 苹果系统特有 MIME 类型开始 ---
+    - image/heic
+    - image/heif
+    - video/quicktime
+    - audio/mp4
+    - audio/x-m4a
+    - application/x-iwork-pages-sffpages
+    - application/x-iwork-numbers-sffnumbers
+    - application/x-iwork-keynote-sffkeynote
+    # --- 苹果系统特有 MIME 类型结束 ---

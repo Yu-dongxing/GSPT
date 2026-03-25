@@ -1,14 +1,22 @@
-2026-03-20 17:48:22.482 [main] INFO  com.wzz.gspt.GSPTApplicationTests - Starting GSPTApplicationTests using Java 21.0.10 with PID 21560 (started by yuxs in E:\CODEPROJECT\JAVA\GSPT)
-2026-03-20 17:48:22.491 [main] INFO  com.wzz.gspt.GSPTApplicationTests - No active profile set, falling back to 1 default profile: "default"
-2026-03-20 17:48:22.862 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 9.0.1.Final
-2026-03-20 17:48:23.548 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
-2026-03-20 17:48:23.550 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
-2026-03-20 17:48:23.588 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 24 ms. Found 0 Redis repository interfaces.
-2026-03-20 17:48:25.063 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
-2026-03-20 17:48:25.279 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@50e24ea4
-2026-03-20 17:48:25.281 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
-2026-03-20 17:48:26.928 [main] INFO  com.baomidou.mybatisplus.extension.spring.MybatisPlusApplicationContextAware - Register ApplicationContext instances org.springframework.web.context.support.GenericWebApplicationContext@24d61e4
-2026-03-20 17:48:27.436 [main] INFO  org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
-2026-03-20 17:48:27.496 [main] INFO  com.wzz.gspt.GSPTApplicationTests - Started GSPTApplicationTests in 5.467 seconds (process running for 6.894)
-2026-03-20 17:48:28.209 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
-2026-03-20 17:48:28.221 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-03-25 11:25:26.613 [main] INFO  com.wzz.gspt.GSPTApplication - Starting GSPTApplication using Java 21.0.10 with PID 9088 (E:\CODEPROJECT\JAVA\GSPT\target\classes started by yuxs in E:\CODEPROJECT\JAVA\GSPT)
+2026-03-25 11:25:26.620 [main] INFO  com.wzz.gspt.GSPTApplication - No active profile set, falling back to 1 default profile: "default"
+2026-03-25 11:25:26.749 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 9.0.1.Final
+2026-03-25 11:25:27.342 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-03-25 11:25:27.344 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-03-25 11:25:27.378 [main] INFO  org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 20 ms. Found 0 Redis repository interfaces.
+2026-03-25 11:25:27.918 [main] INFO  org.springframework.boot.tomcat.TomcatWebServer - Tomcat initialized with port 8084 (http)
+2026-03-25 11:25:27.927 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8084"]
+2026-03-25 11:25:27.929 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-03-25 11:25:27.929 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.18]
+2026-03-25 11:25:27.978 [main] INFO  org.springframework.boot.web.context.servlet.WebApplicationContextInitializer - Root WebApplicationContext: initialization completed in 1321 ms
+2026-03-25 11:25:28.459 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-03-25 11:25:28.579 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@2a21cbe7
+2026-03-25 11:25:28.580 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-03-25 11:25:29.282 [main] INFO  com.baomidou.mybatisplus.extension.spring.MybatisPlusApplicationContextAware - Register ApplicationContext instances org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@6e6fce47
+2026-03-25 11:25:29.520 [main] INFO  org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
+2026-03-25 11:25:29.587 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8084"]
+2026-03-25 11:25:29.592 [main] INFO  org.springframework.boot.tomcat.TomcatWebServer - Tomcat started on port 8084 (http) with context path '/'
+2026-03-25 11:25:29.599 [main] INFO  com.wzz.gspt.GSPTApplication - Started GSPTApplication in 3.471 seconds (process running for 4.752)
+2026-03-25 11:25:30.049 [RMI TCP Connection(1)-198.18.0.1] INFO  org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-25 11:25:30.050 [RMI TCP Connection(1)-198.18.0.1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-03-25 11:25:30.051 [RMI TCP Connection(1)-198.18.0.1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms

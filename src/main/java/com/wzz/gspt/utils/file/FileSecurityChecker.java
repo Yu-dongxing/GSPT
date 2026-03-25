@@ -73,7 +73,7 @@ public class FileSecurityChecker {
         if (file == null || file.isEmpty()) {
             throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "上传文件不能为空");
         }
-        if (file.getSize() > fileProperties.getMaxSize()) {
+        if (file.getSize() > fileProperties.getMaxSize().toBytes()) {
             throw new BusinessException(ResultCode.PARAM_IS_INVALID.getCode(), "上传文件大小超过限制");
         }
 

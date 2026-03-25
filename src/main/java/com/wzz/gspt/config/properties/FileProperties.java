@@ -3,6 +3,7 @@ package com.wzz.gspt.config.properties;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
+import org.springframework.util.unit.DataSize;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,7 @@ public class FileProperties {
     /**
      * 单个文件允许上传的最大字节数
      */
-    private long maxSize = 20 * 1024 * 1024L;
+    private DataSize maxSize = DataSize.ofMegabytes(500);
 
     /**
      * 允许上传的文件后缀白名单
